@@ -1,108 +1,40 @@
-// CONFIGURACIÓN DE FIREBASE EN LA NUBE
-const firebaseConfig = {
-    apiKey: "AIzaSyAkt5K2tWbbr9QdUaJhZx0rLeDbaiEs98Q",
-    authDomain: "empanadacontrol.firebaseapp.com",
-    databaseURL: "https://empanadacontrol-default-rtdb.firebaseio.com",
-    projectId: "empanadacontrol",
-    storageBucket: "empanadacontrol.firebasestorage.app",
-    messagingSenderId: "97127633277",
-    appId: "1:97127633277:web:a32e2b8b7c5b64e0efbc14"
-};
+// ========================================================
+// VERSIÓN SIN NUBE (SOLO MEMORIA LOCAL)
+// ========================================================
+// Hemos desconectado Firebase para evitar que te sabotee los datos.
 
-// Inicializar la conexión
-firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
-
-
-// Cargar datos existentes o iniciar vacíos
 let inventario = JSON.parse(localStorage.getItem('empanadas_inventario')) || [];
 let insumos = JSON.parse(localStorage.getItem('empanadas_insumos')) || [];
 let deudores = JSON.parse(localStorage.getItem('empanadas_deudores')) || [];
 let balance = parseFloat(localStorage.getItem('empanadas_balance')) || 0;
 let historial = JSON.parse(localStorage.getItem('empanadas_historial')) || [];
+let historicoAcumulado = JSON.parse(localStorage.getItem('empanadas_historico_general')) || [];
 let carrito = [];
-
-// --- CONTROL DE NUEVO DÍA AUTOMÁTICO ---
-const hoy = new Date().toLocaleDateString('es-CO'); // Obtiene la fecha de hoy
-let ultimaFechaControl = localStorage.getItem('empanadas_fecha_control');
-
-// Si no hay fecha registrada (primera vez) la guarda
-if (!ultimaFechaControl) {
-    localStorage.setItem('empanadas_fecha_control', hoy);
-} 
-// Si la fecha guardada es diferente a la de hoy, significa que cambió el día
-else if (ultimaFechaControl !== hoy) {
-    // 1. Cargamos el acumulado histórico general para no perder nada
-    let historicoAcumulado = JSON.parse(localStorage.getItem('empanadas_historico_general')) || [];
-    
-    // 2. Pasamos las ventas de ayer al baúl del historial general
-    historicoAcumulado.push({
-        fecha: ultimaFechaControl,
-        balanceFinal: balance,
-        ventasDetalle: historial
-    });
-    
-    // 3. Guardamos el baúl histórico permanentemente en la memoria
-    localStorage.setItem('empanadas_historico_general', JSON.stringify(historicoAcumulado));
-    
-    // 4. ¡REINICIO TOTAL PARA EL NUEVO DÍA!
-    balance = 0;
-    historial = [];
-    
-    // 5. Actualizamos la memoria con el balance en 0 y el historial limpio
-    localStorage.setItem('empanadas_balance', balance);
-    localStorage.setItem('empanadas_historial', JSON.stringify(historial));
-    localStorage.setItem('empanadas_fecha_control', hoy);
-}
-
 
 actualizarPantalla();
 
-// 🔥 NUEVA FUNCIÓN: AJUSTAR EL BALANCE DESDE LA LIBRETA
-function ajustarBalanceManual() {
-    const nuevoSaldo = prompt("Escribe el saldo acumulado actual de tu libreta (Ej: 45000):", balance);
-    if (nuevoSaldo !== null && !isNaN(parseFloat(nuevoSaldo))) {
-        balance = parseFloat(nuevoSaldo);
-        guardarEnMemoria();
-        actualizarPantalla();
-    }
-}
-
-// 🔥 NUEVA FUNCIÓN: CONTROL DE FIADOS (DEUDORES)
+// 🔥 CONTROL DE FIADOS (DEUDORES)
 function agregarDeuda() {
     const clienteInp = document.getElementById('deuda-cliente');
     const montoInp = document.getElementById('deuda-monto');
-
     const nombre = clienteInp.value.trim();
     const monto = parseFloat(montoInp.value);
 
-    if (!nombre || isNaN(monto) || monto <= 0) {
-        alert("Escribe el nombre del cliente y cuánto te debe.");
-        return;
-    }
-
-    deudores.push({
-        id: Date.now(),
-        nombre: nombre,
-        monto: monto
-    });
+    if (!nombre || isNaN(monto) || monto <= 0) return alert("Escribe el nombre y cuánto debe.");
+    deudores.push({ id: Date.now(), nombre: nombre, monto: monto });
 
     guardarEnMemoria();
     actualizarPantalla();
-
-    clienteInp.value = '';
-    montoInp.value = '';
+    clienteInp.value = ''; montoInp.value = '';
 }
 
 function pagarDeuda(id) {
     const deudorIndex = deudores.findIndex(d => d.id === id);
     if (deudorIndex === -1) return;
-
     const deudor = deudores[deudorIndex];
-    if (confirm(`¿Confirmas que ${deudor.nombre} pagó la deuda completa de $${deudor.monto}? (Este dinero se sumará a tu balance actual)`)) {
-        balance += deudor.monto; // Sumar el dinero recuperado a la caja
-        deudores.splice(deudorIndex, 1); // Quitarlo de la lista negra
-        
+    if (confirm(`¿Confirmas que ${deudor.nombre} pagó $${deudor.monto}?`)) {
+        balance += deudor.monto;
+        deudores.splice(deudorIndex, 1);
         guardarEnMemoria();
         actualizarPantalla();
     }
@@ -118,29 +50,19 @@ function agregarInsumo() {
     const costo = parseFloat(costoInp.value);
     const cantidad = parseFloat(cantInp.value);
 
-    if (!nombre || isNaN(costo) || isNaN(cantidad) || cantidad <= 0) {
-        alert("Rellena los datos del insumo correctamente.");
-        return;
-    }
+    if (!nombre || isNaN(costo) || isNaN(cantidad) || cantidad <= 0) return alert("Datos inválidos.");
 
     insumos.push({
-        id: Date.now(),
-        nombre: nombre,
-        costoTotal: costo,
-        cantidadTotal: cantidad,
-        costoUnitario: costo / cantidad
+        id: Date.now(), nombre: nombre, costoTotal: costo, cantidadTotal: cantidad, costoUnitario: costo / cantidad
     });
-
-    guardarEnMemoria();
-    actualizarPantalla();
+    guardarEnMemoria(); actualizarPantalla();
     nombreInp.value = ''; costoInp.value = ''; cantInp.value = '';
 }
 
 function eliminarInsumo(id) {
     if (confirm("¿Eliminar este insumo?")) {
         insumos = insumos.filter(i => i.id !== id);
-        guardarEnMemoria();
-        actualizarPantalla();
+        guardarEnMemoria(); actualizarPantalla();
     }
 }
 
@@ -154,18 +76,13 @@ function agregarProducto() {
     const precio = parseFloat(precioInput.value);
     const stock = parseInt(stockInput.value);
 
-    if (!nombre || isNaN(precio) || isNaN(stock)) {
-        alert("Por favor rellena todos los campos.");
-        return;
-    }
+    if (!nombre || isNaN(precio) || isNaN(stock)) return alert("Rellena todos los campos.");
 
     let costoProduccionUnidad = 0;
     let recetaGuardada = [];
-
     insumos.forEach(insumo => {
         const inputCheck = document.getElementById(`check-insumo-${insumo.id}`);
         const inputCant = document.getElementById(`cant-insumo-${insumo.id}`);
-        
         if (inputCheck && inputCheck.checked) {
             const cantidadUsada = parseFloat(inputCant.value) || 0;
             if (cantidadUsada > 0) {
@@ -176,17 +93,11 @@ function agregarProducto() {
     });
 
     inventario.push({
-        id: Date.now(), 
-        nombre: nombre,
-        precio: precio,
-        stock: stock,
-        costoProduccion: costoProduccionUnidad,
-        ganancia: precio - costoProduccionUnidad,
-        receta: recetaGuardada
+        id: Date.now(), nombre: nombre, precio: precio, stock: stock,
+        costoProduccion: costoProduccionUnidad, ganancia: precio - costoProduccionUnidad, receta: recetaGuardada
     });
 
-    guardarEnMemoria();
-    actualizarPantalla();
+    guardarEnMemoria(); actualizarPantalla();
     nombreInput.value = ''; precioInput.value = ''; stockInput.value = '';
 }
 
@@ -194,157 +105,88 @@ function venderUno(id) {
     const producto = inventario.find(p => p.id === id);
     if (!producto || producto.stock <= 0) return;
 
-    // 🔥 AQUÍ ENGANCHAMOS LA CALCULADORA ANTES DE GUARDAR
     abrirCalculadoraVueltos(producto.precio, function() {
         producto.stock -= 1;
         balance += producto.precio;
-
-        const ahora = new Date();
-        const hora = ahora.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const hora = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         
- // BUSCAMOS SI YA HICIMOS UNA VENTA EN ESTE MISMO MINUTO
-const ventaExistente = historial.find(h => h.hora === hora);
-if (ventaExistente) {
-        ventaExistente.total += producto.precio;
-    // Limpiamos formatos viejos con "+" y separamos por coma
-    ventaExistente.detalle = ventaExistente.detalle.replace(/\+/g, ',');
-    let items = ventaExistente.detalle.split(", ");
-    let encontrados = false;
-
-    for(let i = 0; i < items.length; i++) {
-        if(items[i].includes(producto.nombre)) {
-            let partes = items[i].split(" ");
-            let cantidad = parseInt(partes[0]) + 1;
-            items[i] = cantidad + " " + producto.nombre;
-            encontrados = true;
-            break;
+        const ventaExistente = historial.find(h => h.hora === hora);
+        if (ventaExistente) {
+            ventaExistente.total += producto.precio;
+            ventaExistente.detalle = ventaExistente.detalle.replace(/\+/g, ',');
+            let items = ventaExistente.detalle.split(", ");
+            let encontrados = false;
+            for(let i = 0; i < items.length; i++) {
+                if(items[i].includes(producto.nombre)) {
+                    let partes = items[i].split(" ");
+                    items[i] = (parseInt(partes[0]) + 1) + " " + producto.nombre;
+                    encontrados = true; break;
+                }
+            }
+            if(!encontrados) items.push("1 " + producto.nombre);
+            ventaExistente.detalle = items.join(", ");
+        } else {
+            historial.unshift({ productoId: producto.id, detalle: "1 " + producto.nombre, total: producto.precio, hora: hora });
         }
-    }
-    if(!encontrados) {
-        items.push("1 " + producto.nombre);
-    }
-    ventaExistente.detalle = items.join(", ").replace(/\+/g, ',');
-
-} else {
-    // Si es una venta nueva, creamos el registro inicial con formato de cantidad
-    historial.unshift({
-        productoId: producto.id,
-        detalle: "1 " + producto.nombre,
-        total: producto.precio,
-        hora: hora
+        guardarEnMemoria(); actualizarPantalla();
     });
 }
-
-
-
-
-        guardarEnMemoria();
-        actualizarPantalla();
-    });
-}
-
 
 function deshacerVenta(index) {
     const venta = historial[index];
     balance -= venta.total;
     if (balance < 0) balance = 0;
 
-    // AHORA: Limpiamos el detalle para obtener los nombres correctamente
-    // Separamos por comas y quitamos el número inicial (ej: "2 Carne" -> "Carne")
     let items = venta.detalle.split(", ");
-    
     items.forEach(item => {
-        // Extraemos solo el nombre después del número
         let nombreProducto = item.substring(item.indexOf(' ') + 1);
-        
-        // Buscamos el producto en el inventario por su nombre
         const producto = inventario.find(p => p.nombre === nombreProducto);
-        
-        if (producto) {
-            producto.stock += parseInt(item.split(" ")[0]); // Sumamos la cantidad exacta
-        }
+        if (producto) producto.stock += parseInt(item.split(" ")[0]);
     });
-
     historial.splice(index, 1);
-    guardarEnMemoria();
-    actualizarPantalla();
+    guardarEnMemoria(); actualizarPantalla();
 }
-
 
 function eliminarProducto(id) {
     if (confirm("¿Eliminar producto?")) {
         inventario = inventario.filter(p => p.id !== id);
-        guardarEnMemoria();
-        actualizarPantalla();
+        guardarEnMemoria(); actualizarPantalla();
     }
 }
 
+// 🔥 GUARDADO PURAMENTE LOCAL (SIN FIREBASE)
 function guardarEnMemoria() {
-    // 1. Guardar copia local en el teléfono
     localStorage.setItem('empanadas_inventario', JSON.stringify(inventario));
     localStorage.setItem('empanadas_insumos', JSON.stringify(insumos));
     localStorage.setItem('empanadas_deudores', JSON.stringify(deudores));
     localStorage.setItem('empanadas_balance', balance.toString());
     localStorage.setItem('empanadas_historial', JSON.stringify(historial));
+    localStorage.setItem('empanadas_historico_general', JSON.stringify(historicoAcumulado));
 
-    // Obtener el elemento de la nube
     const nube = document.getElementById('icono-nube');
-    
     if (nube) {
-        // Ponemos la nube en modo "Cargando" (naranja y parpadeando)
-        nube.className = "material-icons nube-cargando";
-        nube.innerText = "cloud"; 
+        nube.className = "material-icons nube-sincronizada";
+        nube.innerText = "cloud_done"; // Mostramos que guardó localmente
     }
-
-    // 2. ¡Sincronizar con la nube y escuchar si se subió bien!
-    db.ref('empanada_control/').set({
-        inventario: inventario,
-        insumos: insumos,
-        deudores: deudores,
-        balance: balance,
-        historial: historial
-    }, (error) => {
-        if (error) {
-            // SI FALLÓ: Ponemos la nube roja y usamos el icono de nube tachada
-            if (nube) {
-                nube.className = "material-icons nube-error";
-                nube.innerText = "cloud_off";
-            }
-        } else {
-            // SI TODO SALIÓ BIEN: Volvemos a la nube normal verde/azul
-            if (nube) {
-                setTimeout(() => {
-                    nube.className = "material-icons nube-sincronizada";
-                    nube.innerText = "cloud";
-                }, 500); 
-            }
-        }
-    });
 }
 
-
-
 function actualizarPantalla() {
-    // 1. Renderizar Balance Diario y Saldo Total Acumulado
-    document.getElementById('balance-total').innerHTML = `$${balance.toLocaleString()}`;
+    document.getElementById('balance-total').innerHTML = `$${balance.toLocaleString('es-CO')}`;
     
-    // Calcular el dinero de los días pasados guardados en la caja fuerte
-    let historicoAcumulado = JSON.parse(localStorage.getItem('empanadas_historico_general')) || [];
-    let dineroDiasAnteriores = historicoAcumulado.reduce((sum, dia) => sum + (dia.balanceFinal || 0), 0);
-    
-    // Gran Total = Lo acumulado en días pasados + Lo vendido hoy
+    // Cálculo seguro del acumulado total
+    let dineroDiasAnteriores = 0;
+    if (Array.isArray(historicoAcumulado)) {
+        dineroDiasAnteriores = historicoAcumulado.reduce((sum, dia) => sum + (parseFloat(dia.balanceFinal) || 0), 0);
+    }
     let saldoGranTotal = dineroDiasAnteriores + balance;
     
-       // Renderizar el saldo total con la opción de hacer clic para editarlo
     const divGranTotal = document.getElementById('saldo-gran-total');
     if (divGranTotal) {
-        divGranTotal.innerHTML = `Acumulado Total: <span style="text-decoration: underline; cursor: pointer; color: #ffeb3b;" onclick="editarAcumuladoTotal()">$${saldoGranTotal.toLocaleString()}</span>`;
+        divGranTotal.innerHTML = `Acumulado Total: <span style="text-decoration: underline; cursor: pointer; color: #ffeb3b;" onclick="editarAcumuladoTotal()">$${saldoGranTotal.toLocaleString('es-CO')}</span>`;
     }
 
-    // 2. Ventas Rápidas (Ahora agrega al carrito)
     const divVentas = document.getElementById('lista-ventas-disponibles');
     divVentas.innerHTML = inventario.length === 0 ? '<p style="color:#757575;">No hay productos en inventario</p>' : '';
-    
     inventario.forEach(prod => {
         divVentas.innerHTML += `
             <div class="item-fila">
@@ -356,7 +198,6 @@ function actualizarPantalla() {
             </div>`;
     });
 
-    // 2b. NUEVO: Renderizar el Carrito de Compras en tiempo real
     const divCarrito = document.getElementById('seccion-carrito');
     const divListaCarrito = document.getElementById('lista-carrito');
     
@@ -375,7 +216,6 @@ function actualizarPantalla() {
         divCarrito.style.display = 'none';
     }
 
-    // 3. 🔥 Renderizar Lista de Deudores
     const divDeudores = document.getElementById('lista-deudores');
     if(divDeudores) {
         divDeudores.innerHTML = deudores.length === 0 ? '<p style="color:#757575; font-size:13px;">¡Qué bien! Nadie te debe dinero hoy.</p>' : '';
@@ -393,7 +233,6 @@ function actualizarPantalla() {
         });
     }
 
-    // 4. Formulario de Receta dinámico en Inventario
     const divRecetaSelec = document.getElementById('receta-insumos-seleccion');
     if (divRecetaSelec) {
         if (insumos.length === 0) {
@@ -411,7 +250,6 @@ function actualizarPantalla() {
         }
     }
 
-    // 5. Inventario Completo
     const divInventario = document.getElementById('lista-inventario-completo');
     if(divInventario) {
         divInventario.innerHTML = '';
@@ -419,35 +257,29 @@ function actualizarPantalla() {
             const costo = prod.costoProduccion || 0;
             const ganancia = prod.ganancia || prod.precio;
             const porcentaje = ((ganancia / prod.precio) * 100).toFixed(0);
-
-                                         divInventario.innerHTML += `
-                    <div class="item-fila" style="background: #fafafa; margin-bottom: 12px; padding: 12px; border-radius: 8px; border: 1px solid #e0e0e0;">
-                                    <!-- Fila Superior: Nombre arriba y Stock abajo para que no se peguen -->
-                        <div style="margin-bottom: 8px;">
-                            <span style="font-weight: bold; font-size: 15px; color: #0288d1; display: block; margin-bottom: 4px;">${prod.nombre}</span>
-                            <span style="font-size: 14px; font-weight: bold; color: #333; display: flex; align-items: center; gap: 6px;">
-                                Stock: ${prod.stock}
-                                <span class="material-icons" style="font-size: 18px; cursor: pointer; color: #4caf50; vertical-align: middle;" onclick="editarStockProducto(${prod.id})">edit</span>
-                            </span>
-                        </div>
-                        <!-- Fila Inferior: Botón Eliminar -->
-                        <div style="display: flex; justify-content: flex-end;">
-                            <button class="btn-material btn-eliminar" style="padding: 4px 10px; font-size: 12px; border-radius: 4px;" onclick="eliminarProducto(${prod.id})">Eliminar</button>
-                        </div>
+            divInventario.innerHTML += `
+                <div class="item-fila" style="background: #fafafa; margin-bottom: 12px; padding: 12px; border-radius: 8px; border: 1px solid #e0e0e0;">
+                    <div style="margin-bottom: 8px;">
+                        <span style="font-weight: bold; font-size: 15px; color: #0288d1; display: block; margin-bottom: 4px;">${prod.nombre}</span>
+                        <span style="font-size: 14px; font-weight: bold; color: #333; display: flex; align-items: center; gap: 6px;">
+                            Stock: ${prod.stock}
+                            <span class="material-icons" style="font-size: 18px; cursor: pointer; color: #4caf50; vertical-align: middle;" onclick="editarStockProducto(${prod.id})">edit</span>
+                        </span>
                     </div>
-
-                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px; margin-top:5px; font-size:12px; background:#fff; padding:6px; border-radius:4px; border:1px solid #e1f5fe;">
-                        <div>Costo un.: <strong style="color:#c62828;">$${costo.toFixed(0)}</strong></div>
-                        <div>Precio Venta: <strong>$${prod.precio}</strong></div>
-                        <div style="grid-column: span 2; border-top:1px solid #eee; padding-top:4px;">
-                            Ganancia Limpia: <strong style="color:#2e7d32;">$${ganancia.toFixed(0)} (${porcentaje}%)</strong>
-                        </div>
+                    <div style="display: flex; justify-content: flex-end;">
+                        <button class="btn-material btn-eliminar" style="padding: 4px 10px; font-size: 12px; border-radius: 4px;" onclick="eliminarProducto(${prod.id})">Eliminar</button>
+                    </div>
+                </div>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px; margin-top:5px; font-size:12px; background:#fff; padding:6px; border-radius:4px; border:1px solid #e1f5fe;">
+                    <div>Costo un.: <strong style="color:#c62828;">$${costo.toFixed(0)}</strong></div>
+                    <div>Precio Venta: <strong>$${prod.precio}</strong></div>
+                    <div style="grid-column: span 2; border-top:1px solid #eee; padding-top:4px;">
+                        Ganancia Limpia: <strong style="color:#2e7d32;">$${ganancia.toFixed(0)} (${porcentaje}%)</strong>
                     </div>
                 </div>`;
         });
     }
 
-    // 6. Historial
     const divHistorial = document.getElementById('historial-lista');
     if(divHistorial) {
         divHistorial.innerHTML = historial.length === 0 ? '<p style="color:#757575; font-size:13px;">No hay ventas hoy.</p>' : '';
@@ -461,7 +293,6 @@ function actualizarPantalla() {
         });
     }
 
-    // 7. Lista de Insumos base
     const divInsumosLista = document.getElementById('lista-insumos-completa');
     if(divInsumosLista) {
         divInsumosLista.innerHTML = '';
@@ -474,28 +305,21 @@ function actualizarPantalla() {
         });
     }
 }
-// ========================================================
-// 🧮 LÓGICA DE LA CALCULADORA DE VUELTOS (AL FINAL DE APP.JS)
-// ========================================================
+
+// 🧮 CALCULADORA DE VUELTOS Y CARRITO
 let totalVentaActual = 0;
 let callbackConfirmarVenta = null;
 
-// Esta función abre el cuadro flotante
 function abrirCalculadoraVueltos(total, callbackExito) {
-    totalVentaActual = total;
-    callbackConfirmarVenta = callbackExito;
-
+    totalVentaActual = total; callbackConfirmarVenta = callbackExito;
     document.getElementById('vueltos-total-venta').innerText = '$' + total.toLocaleString();
     document.getElementById('vueltos-paga-con').value = '';
     document.getElementById('vueltos-resultado').innerText = '$0';
     document.getElementById('vueltos-resultado').style.color = '#2e7d32';
     document.getElementById('btn-confirmar-venta').disabled = true;
-
     document.getElementById('modal-vueltos').style.display = 'flex';
-    
 }
 
-// Calcula el cambio en tiempo real
 function calcularCambio() {
     const pagaCon = parseFloat(document.getElementById('vueltos-paga-con').value) || 0;
     const vueltos = pagaCon - totalVentaActual;
@@ -503,222 +327,116 @@ function calcularCambio() {
     const btnConfirmar = document.getElementById('btn-confirmar-venta');
 
     if (pagaCon === 0) {
-        contenedorResultado.innerText = '$0';
-        contenedorResultado.style.color = '#2e7d32';
-        btnConfirmar.disabled = true;
+        contenedorResultado.innerText = '$0'; contenedorResultado.style.color = '#2e7d32'; btnConfirmar.disabled = true;
     } else if (vueltos < 0) {
-        contenedorResultado.innerText = 'Falta dinero: -$' + Math.abs(vueltos).toLocaleString();
-        contenedorResultado.style.color = '#c62828';
-        btnConfirmar.disabled = true;
+        contenedorResultado.innerText = 'Falta dinero: -$' + Math.abs(vueltos).toLocaleString(); contenedorResultado.style.color = '#c62828'; btnConfirmar.disabled = true;
     } else {
-        contenedorResultado.innerText = '$' + vueltos.toLocaleString();
-        contenedorResultado.style.color = '#2e7d32';
-        btnConfirmar.removeAttribute('disabled');
+        contenedorResultado.innerText = '$' + vueltos.toLocaleString(); contenedorResultado.style.color = '#2e7d32'; btnConfirmar.removeAttribute('disabled');
     }
 }
 
-// Funciones de botones rápidos
-function definirPagoRapido(valor) {
-    document.getElementById('vueltos-paga-con').value = valor;
-    calcularCambio();
-}
+function definirPagoRapido(valor) { document.getElementById('vueltos-paga-con').value = valor; calcularCambio(); }
+function definirPagoExacto() { document.getElementById('vueltos-paga-con').value = totalVentaActual; calcularCambio(); }
+function cerrarModalVueltos() { document.getElementById('modal-vueltos').style.display = 'none'; }
+function finalizarVentaConVueltos() { cerrarModalVueltos(); if (typeof callbackConfirmarVenta === 'function') callbackConfirmarVenta(); }
 
-function definirPagoExacto() {
-    document.getElementById('vueltos-paga-con').value = totalVentaActual;
-    calcularCambio();
-}
-
-function cerrarModalVueltos() {
-    document.getElementById('modal-vueltos').style.display = 'none';
-}
-
-function finalizarVentaConVueltos() {
-    cerrarModalVueltos();
-    if (typeof callbackConfirmarVenta === 'function') {
-        callbackConfirmarVenta();
-    }
-}
-// ========================================================
-// 🛒 FUNCIONES DEL CARRITO DE COMPRAS TEMPORAL
-// ========================================================
 function agregarAlCarrito(id) {
     const producto = inventario.find(p => p.id === id);
     if (!producto) return;
-
-    // Contamos cuántas unidades de este producto ya están metidas en el carrito actual
     const enCarritoActual = carrito.filter(p => p.id === id).length;
-
-    // Verificamos si lo que quieres agregar supera el stock real que tienes
-    if (enCarritoActual >= producto.stock) {
-        alert("¡No hay más stock disponible de " + producto.nombre + "!");
-        return;
-    }
-    
-    carrito.push(producto);
-    guardarEnMemoria();
-    actualizarPantalla();
+    if (enCarritoActual >= producto.stock) return alert("¡No hay más stock disponible!");
+    carrito.push(producto); guardarEnMemoria(); actualizarPantalla();
 }
 
-function limpiarCarrito() {
-    carrito = [];
-    guardarEnMemoria();
-    actualizarPantalla();
-}
-
+function limpiarCarrito() { carrito = []; guardarEnMemoria(); actualizarPantalla(); }
 
 function cobrarVenta() {
     if (carrito.length === 0) return;
-
     let total = carrito.reduce((sum, p) => sum + p.precio, 0);
-
     abrirCalculadoraVueltos(total, function() {
-        const ahora = new Date();
-        const hora = ahora.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-        // Descontar el stock real de cada producto vendido
+        const hora = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         carrito.forEach(itemCarrito => {
             const prodInventario = inventario.find(p => p.id === itemCarrito.id);
-            if (prodInventario) {
-                prodInventario.stock -= 1;
-            }
+            if (prodInventario) prodInventario.stock -= 1;
         });
-
         const detalleCombo = obtenerResumenCarrito(carrito);
-
         balance += total;
-
-        historial.unshift({
-            productoId: 'combo_venta',
-            detalle: detalleCombo,
-            total: total,
-            hora: hora
-        });
-
-        carrito = []; 
-        guardarEnMemoria();
-        actualizarPantalla();
+        historial.unshift({ productoId: 'combo_venta', detalle: detalleCombo, total: total, hora: hora });
+        carrito = []; guardarEnMemoria(); actualizarPantalla();
     });
 }
 
-
-// NUEVA FUNCIÓN: EDITAR EL STOCK DE UN PRODUCTO EXISTENTE
 function editarStockProducto(id) {
     const producto = inventario.find(p => p.id === id);
     if (!producto) return;
-
     const nuevoStockStr = prompt(`Editar stock para "${producto.nombre}":`, producto.stock);
-    
     if (nuevoStockStr !== null) {
         const nuevoStock = parseInt(nuevoStockStr);
         if (!isNaN(nuevoStock) && nuevoStock >= 0) {
-            producto.stock = nuevoStock;
-            guardarEnMemoria();
-            actualizarPantalla();
-        } else {
-            alert("Por favor, introduce un número válido y mayor o igual a cero.");
-        }
+            producto.stock = nuevoStock; guardarEnMemoria(); actualizarPantalla();
+        } else { alert("Número inválido."); }
     }
 }
-// FUNCIÓN CORREGIDA: MUESTRA LA FECHA EXACTA DE CADA CIERRE
+
 function mostrarHistorialCierres() {
     const divModal = document.getElementById('modal-historial-cierres');
     const divLista = document.getElementById('lista-cierres-dia-a-dia');
-    
-    let historico = [];
-    try {
-        historico = JSON.parse(localStorage.getItem('empanadas_historial')) || [];
-    } catch(e) {
-        historico = [];
-    }
-
     divLista.innerHTML = '';
-
-    if (historico.length === 0) {
-        divLista.innerHTML = '<p style="text-align:center; color:#777; font-size:14px; margin:20px 0;">No hay cierres de caja registrados aún.</p>';
+    if (historicoAcumulado.length === 0) {
+        divLista.innerHTML = '<p style="text-align:center; color:#777; font-size:14px; margin:20px 0;">No hay cierres de caja registrados.</p>';
     } else {
-        historico.forEach((cierre, index) => {
-            // 1. Intentamos sacar la fecha si el objeto ya la tiene
-            let fechaStr = cierre.fecha;
-
-            // 2. Si no tiene fecha guardada en memoria, le calculamos una 
-            // basada en el día actual hacia atrás para corregir los anteriores
-            if (!fechaStr) {
-                const fechaEstimada = new Date();
-                fechaEstimada.setDate(fechaEstimada.getDate() - (historico.length - 1 - index));
-                fechaStr = fechaEstimada.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
-            }
-            
-            // Detectamos si el cierre viene como objeto o número directo
-            const montoStr = typeof cierre === 'object' ? (cierre.total || cierre.balance || cierre.monto || 0) : cierre;
-
+        historicoAcumulado.forEach((cierre) => {
             divLista.innerHTML += `
                 <div style="display: flex; justify-content: space-between; align-items: center; background: #f9f9f9; padding: 10px 12px; border-radius: 8px; border-left: 4px solid #4caf50;">
-                    <span style="font-size: 14px; color: #333; font-weight: 500;"><span class="material-icons" style="font-size: 14px; vertical-align: middle; margin-right: 4px; color: #777;">calendar_today</span>${fechaStr}</span>
-                    <strong style="font-size: 15px; color: #2e7d32;">$${parseInt(montoStr).toLocaleString()}</strong>
-                </div>
-            `;
+                    <span style="font-size: 14px; color: #333; font-weight: 500;"><span class="material-icons" style="font-size: 14px; vertical-align: middle; margin-right: 4px; color: #777;">calendar_today</span>${cierre.fecha || "Ajuste"}</span>
+                    <strong style="font-size: 15px; color: #2e7d32;">$${parseInt(cierre.balanceFinal || 0).toLocaleString()}</strong>
+                </div>`;
         });
     }
-
     divModal.style.display = 'flex';
 }
 
-// ESCUCHAR CAMBIOS DESDE LA NUBE EN TIEMPO REAL
-db.ref('empanada_control/').on('value', (snapshot) => {
-    const data = snapshot.val();
-    if (data) {
-        inventario = data.inventario || [];
-        insumos = data.insumos || [];
-        deudores = data.deudores || [];
-        balance = data.balance || 0;
-        historial = data.historial || [];
-        
-        // Redibujar la pantalla con los nuevos datos recibidos
-        actualizarPantalla();
-    }
-});
-
 function obtenerResumenCarrito(listaProductos) {
     const conteo = {};
-    listaProductos.forEach(prod => {
-        conteo[prod.nombre] = (conteo[prod.nombre] || 0) + 1;
-    });
-    // Aquí forzamos que SIEMPRE use comas, nunca el signo "+"
-    return Object.entries(conteo)
-        .map(([nombre, cant]) => `${cant} ${nombre}`)
-        .join(", "); 
+    listaProductos.forEach(prod => { conteo[prod.nombre] = (conteo[prod.nombre] || 0) + 1; });
+    return Object.entries(conteo).map(([nombre, cant]) => `${cant} ${nombre}`).join(", "); 
 }
 
-// 🔥 NUEVA FUNCIÓN: EDITAR EL ACUMULADO TOTAL MANUALMENTE
+// 🔥 EDICIÓN CORRECTA
 function editarAcumuladoTotal() {
-    // Calculamos el valor actual del acumulado histórico
-    let historicoAcumulado = JSON.parse(localStorage.getItem('empanadas_historico_general')) || [];
-    let dineroDiasAnteriores = historicoAcumulado.reduce((sum, dia) => sum + (dia.balanceFinal || 0), 0);
+    let dineroDiasAnteriores = historicoAcumulado.reduce((sum, dia) => sum + (parseFloat(dia.balanceFinal) || 0), 0);
     let saldoActualTotal = dineroDiasAnteriores + balance;
 
-    const nuevoValorStr = prompt("Escribe el nuevo valor real para tu Acumulado Total (Ej: 0 o 45000):", saldoActualTotal);
-    
+    const nuevoValorStr = prompt("Escribe el nuevo valor real para tu Acumulado Total:", saldoActualTotal);
     if (nuevoValorStr !== null) {
         const nuevoValor = parseFloat(nuevoValorStr);
         if (!isNaN(nuevoValor) && nuevoValor >= 0) {
-            // Para ajustar el total de forma limpia, guardamos la diferencia 
-            // metiendo un registro único en el histórico general que ajuste la cuenta exacta.
-            let diferencia = nuevoValor - balance; // Lo que falta descontar o sumar sin tocar el balance de hoy
-            
-            // Limpiamos el histórico viejo y creamos uno nuevo con el saldo exacto que deseas
-            let nuevoHistorico = [{
+            historicoAcumulado = [{
+                id: Date.now(),
                 fecha: "Ajuste Manual",
-                balanceFinal: diferencia,
-                ventasDetalle: [{ detalle: "Ajuste de Acumulado Total", total: diferencia, hora: "00:00" }]
+                balanceFinal: nuevoValor - balance
             }];
-
-            localStorage.setItem('empanadas_historico_general', JSON.stringify(nuevoHistorico));
-            
             guardarEnMemoria();
             actualizarPantalla();
-            alert("¡Acumulado Total actualizado con éxito!");
-        } else {
-            alert("Por favor, introduce un número válido.");
         }
+    }
+}
+
+// 🔥 CIERRE CORRECTO
+function cerrarCaja() {
+    if (balance <= 0) return alert("No hay dinero en el balance de hoy para cerrar.");
+    
+    if (confirm("¿Cerrar caja y acumular el dinero de hoy?")) {
+        const ahora = new Date();
+        const fecha = ahora.toLocaleDateString('es-CO') + " " + ahora.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        
+        if (!Array.isArray(historicoAcumulado)) historicoAcumulado = [];
+        historicoAcumulado.push({
+            id: Date.now(), fecha: fecha, balanceFinal: balance, ventasDetalle: [...historial]
+        });
+
+        balance = 0; historial = []; 
+        guardarEnMemoria(); actualizarPantalla();
+        alert("¡Caja cerrada y acumulada correctamente!");
     }
 }

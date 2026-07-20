@@ -28,7 +28,7 @@
 				<div id="saldo-gran-total" style="font-size: 14px; opacity: 0.85; margin-top: 4px; font-weight: normal;">Acumulado Total: $0</div>
                 <div style="margin-top: 10px; display: flex; justify-content: center; gap: 15px; font-size: 12px;">
                     <span style="cursor:pointer; display:flex; align-items:center; gap:3px; opacity:0.9;" onclick="ajustarBalanceManual()"><span class="material-icons" style="font-size:14px;">edit</span> Ajustar Saldo Inicial</span>
-                    <span style="cursor:pointer; display:flex; align-items:center; gap:3px; opacity:0.9;" onclick="if(confirm('¿Cerrar caja y vaciar balance a $0?')){balance=0; guardarEnMemoria(); actualizarPantalla();}"><span class="material-icons" style="font-size:14px;">autorenew</span> Cerrar Caja</span>
+                    <span style="cursor:pointer; display:flex; align-items:center; gap:3px; opacity:0.9;" onclick="cerrarCaja()"><span class="material-icons" style="font-size:14px;">autorenew</span> Cerrar Caja</span>
                 </div>
             </div>
             <!-- REGISTRAR NUEVA VENTA -->
