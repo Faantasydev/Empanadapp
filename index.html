@@ -219,13 +219,11 @@
 
         const direccion = indiceNuevo > indiceActual ? 'animar-adelante' : 'animar-atras';
 
-        // Ocultamos todas y quitamos animaciones viejas
         document.querySelectorAll('.pestana-contenido').forEach(p => {
             p.classList.remove('activa', 'animar-adelante', 'animar-atras');
         });
         document.querySelectorAll('.dock-item').forEach(b => b.classList.remove('activo'));
         
-        // Activamos la nueva con su animación
         const nuevaPestana = document.getElementById(idPestaña);
         nuevaPestana.classList.add('activa', direccion);
         botonActivo.classList.add('activo');
@@ -234,16 +232,19 @@
         window.scrollTo(0,0);
     }
 
+    // Función de deudores blindada para que abra al primer toque
     function toggleDeudores() {
         const contenido = document.getElementById('contenido-deudores');
         const flecha = document.getElementById('flecha-deudores');
         
-        if (contenido.style.display === 'none') {
+        if (!contenido) return;
+
+        if (contenido.style.display === 'none' || contenido.style.display === '') {
             contenido.style.display = 'block';
-            flecha.style.transform = 'rotate(180deg)';
+            if (flecha) flecha.style.transform = 'rotate(180deg)';
         } else {
             contenido.style.display = 'none';
-            flecha.style.transform = 'rotate(0deg)';
+            if (flecha) flecha.style.transform = 'rotate(0deg)';
         }
     }
 </script>

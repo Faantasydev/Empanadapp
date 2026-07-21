@@ -186,19 +186,22 @@ header p {
 .qr-instrucciones { font-size: 13px; color: #546e7a; line-height: 1.4; }
 
 /* --- 🔥 NUEVO DOCK INFERIOR (ESTILO MATERIAL) --- */
+/* Aseguramos que el menú inferior mande siempre sobre cualquier capa */
 .dock-inferior {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 65px;
-    background-color: white;
-    display: flex;
-    justify-content: space-around;
-    align-items: center;
-    box-shadow: 0 -3px 10px rgba(0,0,0,0.08);
-    ​z-index: 9999 !important;
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 99999 !important;
 }
+
+/* Evitamos que el contenido de la libreta tape los clics de abajo */
+.container {
+    position: relative;
+    z-index: 1;
+    padding-bottom: 90px !important; /* Espacio para que el menú no tape los botones de abajo */
+}
+
 
 .dock-item {
     background: none;
