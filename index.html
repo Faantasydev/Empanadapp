@@ -207,29 +207,53 @@
             <span>QR Pago</span>
         </button>
     </div>
-    <script>
-        function cambiarPestaña(idPestaña, botonActivo) {
-            document.querySelectorAll('.pestana-contenido').forEach(p => p.classList.remove('activa'));
-            document.querySelectorAll('.dock-item').forEach(b => b.classList.remove('activo'));
-            document.getElementById(idPestaña).classList.add('activa');
-            botonActivo.classList.add('activo');
-            window.scrollTo(0,0);
-        }
+<script>
+    // Definimos el orden lógico de la libreta (de izquierda a derecha)
+    const ordenPestanas = ['pantalla-ventas', 'pantalla-inventario', 'pantalla-insumos', 'pantalla-pagos'];
+    let indiceActual = 0; // Arrancamos en la página 0 (Ventas)
 
-        // 🔥 NUEVA FUNCIÓN PARA DESPLEGAR DEUDORES
-        function toggleDeudores() {
-            const contenido = document.getElementById('contenido-deudores');
-            const flecha = document.getElementById('flecha-deudores');
-            
-            if (contenido.style.display === 'none') {
-                contenido.style.display = 'block';
-                flecha.style.transform = 'rotate(180deg)';
-            } else {
-                contenido.style.display = 'none';
-                flecha.style.transform = 'rotate(0deg)';
-            }
+    function cambiarPestaña(idPestaña, botonActivo) {
+        const indiceNuevo = ordenPestanas.indexOf(idPestaña);
+        
+        // Si tocas la pestaña en la que ya estás, no hace nada
+        if (indiceNuevo === indiceActual) return; 
+
+        // Descubrimos la dirección: ¿vamos adelante o atrás?
+        const direccion = indiceNuevo > indiceActual ? 'animar-adelante' : 'animar-atras';
+
+        // 1. Limpiamos todas las pestañas y botones
+        document.querySelectorAll('.pestana-contenido').forEach(p => {
+            p.classList.remove('activa', 'animar-adelante', 'animar-atras');
+        });
+        document.querySelectorAll('.dock-item').forEach(b => b.classList.remove('activo'));
+        
+        // 2. Activamos la nueva página con su animación correspondiente
+        const nuevaPestana = document.getElementById(idPestaña);
+        nuevaPestana.classList.add('activa', direccion);
+        botonActivo.classList.add('activo');
+        
+        // 3. Actualizamos en qué página estamos ahora
+        indiceActual = indiceNuevo;
+        
+        // Volvemos arriba de la página por si estabas haciendo scroll
+        window.scrollTo(0,0);
+    }
+
+    // ... (Mantén tu función toggleDeudores() intacta aquí abajo)
+    function toggleDeudores() {
+        const contenido = document.getElementById('contenido-deudores');
+        const flecha = document.getElementById('flecha-deudores');
+        
+        if (contenido.style.display === 'none') {
+            contenido.style.display = 'block';
+            flecha.style.transform = 'rotate(180deg)';
+        } else {
+            contenido.style.display = 'none';
+            flecha.style.transform = 'rotate(0deg)';
         }
-    </script>
+    }
+</script>
+
 
    <!-- Cargar los servicios de Firebase en la Nube -->
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
