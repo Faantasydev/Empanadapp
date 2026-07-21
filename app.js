@@ -561,3 +561,34 @@ function verificarCierreDeDia() {
 
 verificarCierreDeDia();
 setInterval(verificarCierreDeDia, 60000);
+
+// 🔥 AGREGAR DÍAS ANTERIORES DESDE LA LIBRETA FÍSICA
+function agregarDiaDeLibreta() {
+    // 1. Pedimos la fecha
+    const fechaIngresada = prompt("Ingresa la fecha del día que quieres registrar (Ejemplo: 05/07/2026):");
+    if (!fechaIngresada || fechaIngresada.trim() === "") return; // Si cancela, no hacemos nada
+
+    // 2. Pedimos el dinero de ese día
+    const montoIngresado = prompt(`¿Cuánto fue la ganancia total del día ${fechaIngresada}?`);
+    if (montoIngresado === null) return; // Si cancela, no hacemos nada
+
+    const montoReal = parseFloat(montoIngresado);
+    if (isNaN(montoReal) || montoReal < 0) {
+        return alert("Por favor, ingresa un número válido sin letras ni símbolos extraños.");
+    }
+
+    // 3. Lo guardamos en el historial acumulado
+    historicoAcumulado.push({
+        id: Date.now(),
+        fecha: fechaIngresada + " (Libreta)", // Le ponemos la etiqueta para que sepas de dónde salió
+        balanceFinal: montoReal,
+        ventasDetalle: ["Registro manual desde libreta física"]
+    });
+
+    // 4. Guardamos en memoria, nube y actualizamos pantalla
+    guardarEnMemoria();
+    actualizarPantalla();
+    
+    // 5. Refrescamos la ventana del historial para que lo veas aparecer de inmediato
+    mostrarHistorialCierres(); 
+}

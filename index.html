@@ -233,18 +233,28 @@
 
     <script src="app.js"></script>
 	
-	<!-- VENTANA FLOTANTE: HISTORIAL DE CIERRES DIARIOS -->
-<div id="modal-historial-cierres" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box;">
-    <div style="background: white; width: 100%; max-width: 400px; border-radius: 12px; padding: 20px; max-height: 80%; overflow-y: auto; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 2px solid #0288d1; padding-bottom: 8px;">
-            <h3 style="margin: 0; color: #0288d1; font-size: 18px;">Día a Día (Cierres de Caja)</h3>
-            <span class="material-icons" style="cursor: pointer; color: #666;" onclick="document.getElementById('modal-historial-cierres').style.display = 'none'">close</span>
-        </div>
-        <div id="lista-cierres-dia-a-dia" style="display: flex; flex-direction: column; gap: 10px;">
-            <!-- Aquí se cargarán los días dinámicamente -->
-        </div>
+<!-- VENTANA FLOTANTE: HISTORIAL DE CIERRES DIARIOS -->
+<div id="modal-historial-cierres" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+    <div style="background: white; width: 90%; max-width: 360px; padding: 20px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); box-sizing: border-box;">
+        
+        <h3 style="margin-top: 0; text-align: center; color: #1565c0; display: flex; align-items: center; justify-content: center; gap: 5px;">
+            <span class="material-icons">history</span> Historial de Días
+        </h3>
+        
+        <!-- 🔥 BOTÓN DE LA LIBRETA 🔥 -->
+        <button onclick="agregarDiaDeLibreta()" class="btn-material" style="background-color: #ff9800; width: 100%; margin-bottom: 15px; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px; border-radius: 8px;">
+            <span class="material-icons">menu_book</span> Agregar día de libreta
+        </button>
+
+        <!-- Esta es la lista donde ya se muestran tus cierres -->
+        <div id="lista-cierres-dia-a-dia" style="max-height: 300px; overflow-y: auto; margin-bottom: 15px;"></div>
+        
+        <!-- BOTÓN DE CERRAR -->
+        <button onclick="document.getElementById('modal-historial-cierres').style.display='none'" class="btn-material" style="background-color: #757575; width: 100%; padding: 12px; border-radius: 8px;">Cerrar</button>
     </div>
 </div>
+
+
 
 </body>
 </html>
