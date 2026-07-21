@@ -29,26 +29,33 @@ let carrito = [];
 actualizarPantalla();
 
 // ========================================================
-// ☁️ CARGA INICIAL DESDE FIREBASE
+// ☁️ SINCRONIZACIÓN EN TIEMPO REAL CON FIREBASE
 // ========================================================
-db.ref('empanada_control/').once('value').then((snapshot) => {
+// Al usar .on() en lugar de .once(), la app "escucha" los cambios 
+// que hacen otros teléfonos y se actualiza sola al instante.
+
+db.ref('empanada_control/').on('value', (snapshot) => {
     const data = snapshot.val();
+    
     if (data) {
-        inventario = data.inventario || inventario;
-        insumos = data.insumos || insumos;
-        deudores = data.deudores || deudores;
-        balance = data.balance !== undefined ? data.balance : balance;
-        historial = data.historial || historial;
+        inventario = data.inventario || [];
+        insumos = data.insumos || [];
+        deudores = data.deudores || [];
+        balance = data.balance !== undefined ? data.balance : 0;
+        historial = data.historial || [];
         
         if (data.historicoAcumulado && Array.isArray(data.historicoAcumulado)) {
             historicoAcumulado = data.historicoAcumulado;
             localStorage.setItem('empanadas_historico_general', JSON.stringify(historicoAcumulado));
         }
+        
+        // Cada vez que llega un dato nuevo de otro teléfono, repintamos la pantalla
         actualizarPantalla();
     }
-}).catch((error) => {
-    console.error("Error conectando a Firebase:", error);
+}, (error) => {
+    console.error("Error conectando a Firebase en tiempo real:", error);
 });
+
 
 // ========================================================
 // 🔄 FUNCIONES DE GUARDADO Y PANTALLA
