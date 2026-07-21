@@ -209,54 +209,66 @@
     </div>
 <script>
 
-// Definimos el orden lógico de las hojas del cuaderno
-const ordenPestanas = ['pantalla-ventas', 'pantalla-inventario', 'pantalla-insumos', 'pantalla-pagos'];
-let indiceActual = 0; 
+<script>
+    // Usamos 'window' para evitar errores si el código se lee dos veces
+    window.ordenPestanas = ['pantalla-ventas', 'pantalla-inventario', 'pantalla-insumos', 'pantalla-pagos'];
+    window.indiceActual = 0; 
 
-function cambiarPestaña(idPestaña, botonActivo) {
-    const indiceNuevo = ordenPestanas.indexOf(idPestaña);
-    if (indiceNuevo === indiceActual) return; // Si tocas la misma hoja, no hace nada
+    function cambiarPestaña(idPestaña, botonActivo) {
+        const indiceNuevo = window.ordenPestanas.indexOf(idPestaña);
+        
+        // Si tocas el mismo botón o hay un error, no hace nada
+        if (indiceNuevo === window.indiceActual || indiceNuevo === -1) return; 
 
-    const paginaActual = document.getElementById(ordenPestanas[indiceActual]);
-    const nuevaPagina = document.getElementById(idPestaña);
-    
-    // ¿Vamos hacia adelante o nos devolvemos?
-    const vaHaciaAdelante = indiceNuevo > indiceActual;
+        const paginaActual = document.getElementById(window.ordenPestanas[window.indiceActual]);
+        const nuevaPagina = document.getElementById(idPestaña);
+        const vaHaciaAdelante = indiceNuevo > window.indiceActual;
 
-    // 1. Limpiamos cualquier animación que se haya quedado trabada
-    document.querySelectorAll('.pestana-contenido').forEach(p => {
-        p.classList.remove('hoja-pasando-adelante', 'hoja-pasando-atras');
-    });
-    document.querySelectorAll('.dock-item').forEach(b => b.classList.remove('activo'));
-    
-    // 2. Preparamos las hojas (hacemos visibles ambas al mismo tiempo)
-    if (vaHaciaAdelante) {
-        // Pasamos a la derecha: La hoja nueva espera abajo, la actual gira y desaparece
-        nuevaPagina.classList.add('activa'); 
-        paginaActual.classList.add('activa', 'hoja-pasando-adelante'); 
-    } else {
-        // Nos devolvemos: La actual se queda esperando abajo, la nueva cae desde la izquierda
-        paginaActual.classList.add('activa'); 
-        nuevaPagina.classList.add('activa', 'hoja-pasando-atras'); 
-    }
-    
-    botonActivo.classList.add('activo');
-
-    // 3. Cuando termine la animación (500 milisegundos), ocultamos la página vieja
-    setTimeout(() => {
+        // 1. Limpiamos cualquier animación trabada
         document.querySelectorAll('.pestana-contenido').forEach(p => {
             p.classList.remove('hoja-pasando-adelante', 'hoja-pasando-atras');
-            if (p.id !== idPestaña) {
-                p.classList.remove('activa'); // Apagamos definitivamente la hoja vieja
-            }
         });
-    }, 500);
+        document.querySelectorAll('.dock-item').forEach(b => b.classList.remove('activo'));
+        
+        // 2. Preparamos y giramos las hojas
+        if (vaHaciaAdelante) {
+            nuevaPagina.classList.add('activa'); 
+            paginaActual.classList.add('activa', 'hoja-pasando-adelante'); 
+        } else {
+            paginaActual.classList.add('activa'); 
+            nuevaPagina.classList.add('activa', 'hoja-pasando-atras'); 
+        }
+        
+        botonActivo.classList.add('activo');
 
-    indiceActual = indiceNuevo;
-    window.scrollTo(0,0);
-}
+        // 3. Cuando termina de girar (500ms), ocultamos la vieja
+        setTimeout(() => {
+            document.querySelectorAll('.pestana-contenido').forEach(p => {
+                p.classList.remove('hoja-pasando-adelante', 'hoja-pasando-atras');
+                if (p.id !== idPestaña) {
+                    p.classList.remove('activa'); 
+                }
+            });
+        }, 500);
 
+        window.indiceActual = indiceNuevo;
+        window.scrollTo(0,0);
+    }
 
+    // Mantenemos tu función de deudores intacta
+    function toggleDeudores() {
+        const contenido = document.getElementById('contenido-deudores');
+        const flecha = document.getElementById('flecha-deudores');
+        
+        if (contenido.style.display === 'none') {
+            contenido.style.display = 'block';
+            flecha.style.transform = 'rotate(180deg)';
+        } else {
+            contenido.style.display = 'none';
+            flecha.style.transform = 'rotate(0deg)';
+        }
+    }
+</script>
 
    <!-- Cargar los servicios de Firebase en la Nube -->
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>

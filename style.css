@@ -284,10 +284,15 @@ button, input, select, textarea {
    ========================================= */
 
 .container {
-    display: grid; /* Apila las hojas para que compartan la misma altura */
-    perspective: 1500px; /* Le da la profundidad 3D a la pantalla */
-    overflow: hidden; /* Evita que las esquinas salgan del celular al girar */
+    display: grid; 
+    perspective: 1500px; 
+    overflow: hidden; 
+    /* 🔥 NUEVAS LÍNEAS DE SEGURIDAD 🔥 */
+    position: relative; 
+    z-index: 1; /* Obliga a que todo el papel se quede detrás del menú */
+    padding-bottom: 80px; /* Le da espacio para que el menú no tape tus listas */
 }
+
 
 .pestana-contenido {
     grid-area: 1 / 1; /* Obliga a todas las páginas a estar en el mismo lugar */
