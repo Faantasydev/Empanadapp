@@ -1,8 +1,23 @@
 // ========================================================
-// VERSIÓN SIN NUBE (SOLO MEMORIA LOCAL)
+// ☁️ CONFIGURACIÓN DE FIREBASE EN LA NUBE
 // ========================================================
-// Hemos desconectado Firebase para evitar que te sabotee los datos.
+const firebaseConfig = {
+    apiKey: "AIzaSyAkt5K2tWbbr9QdUaJhZx0rLeDbaiEs98Q",
+    authDomain: "empanadacontrol.firebaseapp.com",
+    databaseURL: "https://empanadacontrol-default-rtdb.firebaseio.com",
+    projectId: "empanadacontrol",
+    storageBucket: "empanadacontrol.firebasestorage.app",
+    messagingSenderId: "97127633277",
+    appId: "1:97127633277:web:a32e2b8b7c5b64e0efbc14"
+};
 
+// Inicializar la conexión
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+// ========================================================
+// 💾 ESTADO INICIAL (MEMORIA LOCAL)
+// ========================================================
 let inventario = JSON.parse(localStorage.getItem('empanadas_inventario')) || [];
 let insumos = JSON.parse(localStorage.getItem('empanadas_insumos')) || [];
 let deudores = JSON.parse(localStorage.getItem('empanadas_deudores')) || [];
@@ -13,149 +28,33 @@ let carrito = [];
 
 actualizarPantalla();
 
-// 🔥 CONTROL DE FIADOS (DEUDORES)
-function agregarDeuda() {
-    const clienteInp = document.getElementById('deuda-cliente');
-    const montoInp = document.getElementById('deuda-monto');
-    const nombre = clienteInp.value.trim();
-    const monto = parseFloat(montoInp.value);
-
-    if (!nombre || isNaN(monto) || monto <= 0) return alert("Escribe el nombre y cuánto debe.");
-    deudores.push({ id: Date.now(), nombre: nombre, monto: monto });
-
-    guardarEnMemoria();
-    actualizarPantalla();
-    clienteInp.value = ''; montoInp.value = '';
-}
-
-function pagarDeuda(id) {
-    const deudorIndex = deudores.findIndex(d => d.id === id);
-    if (deudorIndex === -1) return;
-    const deudor = deudores[deudorIndex];
-    if (confirm(`¿Confirmas que ${deudor.nombre} pagó $${deudor.monto}?`)) {
-        balance += deudor.monto;
-        deudores.splice(deudorIndex, 1);
-        guardarEnMemoria();
+// ========================================================
+// ☁️ CARGA INICIAL DESDE FIREBASE
+// ========================================================
+db.ref('empanada_control/').once('value').then((snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+        inventario = data.inventario || inventario;
+        insumos = data.insumos || insumos;
+        deudores = data.deudores || deudores;
+        balance = data.balance !== undefined ? data.balance : balance;
+        historial = data.historial || historial;
+        
+        if (data.historicoAcumulado && Array.isArray(data.historicoAcumulado)) {
+            historicoAcumulado = data.historicoAcumulado;
+            localStorage.setItem('empanadas_historico_general', JSON.stringify(historicoAcumulado));
+        }
         actualizarPantalla();
     }
-}
+}).catch((error) => {
+    console.error("Error conectando a Firebase:", error);
+});
 
-// LÓGICA DE INSUMOS
-function agregarInsumo() {
-    const nombreInp = document.getElementById('insumo-nombre');
-    const costoInp = document.getElementById('insumo-costo');
-    const cantInp = document.getElementById('insumo-cantidad');
-
-    const nombre = nombreInp.value.trim();
-    const costo = parseFloat(costoInp.value);
-    const cantidad = parseFloat(cantInp.value);
-
-    if (!nombre || isNaN(costo) || isNaN(cantidad) || cantidad <= 0) return alert("Datos inválidos.");
-
-    insumos.push({
-        id: Date.now(), nombre: nombre, costoTotal: costo, cantidadTotal: cantidad, costoUnitario: costo / cantidad
-    });
-    guardarEnMemoria(); actualizarPantalla();
-    nombreInp.value = ''; costoInp.value = ''; cantInp.value = '';
-}
-
-function eliminarInsumo(id) {
-    if (confirm("¿Eliminar este insumo?")) {
-        insumos = insumos.filter(i => i.id !== id);
-        guardarEnMemoria(); actualizarPantalla();
-    }
-}
-
-// LÓGICA DE PRODUCTOS
-function agregarProducto() {
-    const nombreInput = document.getElementById('nuevo-nombre');
-    const precioInput = document.getElementById('nuevo-precio');
-    const stockInput = document.getElementById('nuevo-stock');
-
-    const nombre = nombreInput.value.trim();
-    const precio = parseFloat(precioInput.value);
-    const stock = parseInt(stockInput.value);
-
-    if (!nombre || isNaN(precio) || isNaN(stock)) return alert("Rellena todos los campos.");
-
-    let costoProduccionUnidad = 0;
-    let recetaGuardada = [];
-    insumos.forEach(insumo => {
-        const inputCheck = document.getElementById(`check-insumo-${insumo.id}`);
-        const inputCant = document.getElementById(`cant-insumo-${insumo.id}`);
-        if (inputCheck && inputCheck.checked) {
-            const cantidadUsada = parseFloat(inputCant.value) || 0;
-            if (cantidadUsada > 0) {
-                costoProduccionUnidad += (insumo.costoUnitario * cantidadUsada);
-                recetaGuardada.push({ insumoId: insumo.id, cantidad: cantidadUsada });
-            }
-        }
-    });
-
-    inventario.push({
-        id: Date.now(), nombre: nombre, precio: precio, stock: stock,
-        costoProduccion: costoProduccionUnidad, ganancia: precio - costoProduccionUnidad, receta: recetaGuardada
-    });
-
-    guardarEnMemoria(); actualizarPantalla();
-    nombreInput.value = ''; precioInput.value = ''; stockInput.value = '';
-}
-
-function venderUno(id) {
-    const producto = inventario.find(p => p.id === id);
-    if (!producto || producto.stock <= 0) return;
-
-    abrirCalculadoraVueltos(producto.precio, function() {
-        producto.stock -= 1;
-        balance += producto.precio;
-        const hora = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        
-        const ventaExistente = historial.find(h => h.hora === hora);
-        if (ventaExistente) {
-            ventaExistente.total += producto.precio;
-            ventaExistente.detalle = ventaExistente.detalle.replace(/\+/g, ',');
-            let items = ventaExistente.detalle.split(", ");
-            let encontrados = false;
-            for(let i = 0; i < items.length; i++) {
-                if(items[i].includes(producto.nombre)) {
-                    let partes = items[i].split(" ");
-                    items[i] = (parseInt(partes[0]) + 1) + " " + producto.nombre;
-                    encontrados = true; break;
-                }
-            }
-            if(!encontrados) items.push("1 " + producto.nombre);
-            ventaExistente.detalle = items.join(", ");
-        } else {
-            historial.unshift({ productoId: producto.id, detalle: "1 " + producto.nombre, total: producto.precio, hora: hora });
-        }
-        guardarEnMemoria(); actualizarPantalla();
-    });
-}
-
-function deshacerVenta(index) {
-    const venta = historial[index];
-    balance -= venta.total;
-    if (balance < 0) balance = 0;
-
-    let items = venta.detalle.split(", ");
-    items.forEach(item => {
-        let nombreProducto = item.substring(item.indexOf(' ') + 1);
-        const producto = inventario.find(p => p.nombre === nombreProducto);
-        if (producto) producto.stock += parseInt(item.split(" ")[0]);
-    });
-    historial.splice(index, 1);
-    guardarEnMemoria(); actualizarPantalla();
-}
-
-function eliminarProducto(id) {
-    if (confirm("¿Eliminar producto?")) {
-        inventario = inventario.filter(p => p.id !== id);
-        guardarEnMemoria(); actualizarPantalla();
-    }
-}
-
-// 🔥 GUARDADO PURAMENTE LOCAL (SIN FIREBASE)
+// ========================================================
+// 🔄 FUNCIONES DE GUARDADO Y PANTALLA
+// ========================================================
 function guardarEnMemoria() {
+    // Guardado Local
     localStorage.setItem('empanadas_inventario', JSON.stringify(inventario));
     localStorage.setItem('empanadas_insumos', JSON.stringify(insumos));
     localStorage.setItem('empanadas_deudores', JSON.stringify(deudores));
@@ -165,9 +64,33 @@ function guardarEnMemoria() {
 
     const nube = document.getElementById('icono-nube');
     if (nube) {
-        nube.className = "material-icons nube-sincronizada";
-        nube.innerText = "cloud_done"; // Mostramos que guardó localmente
+        nube.className = "material-icons nube-cargando";
+        nube.innerText = "cloud_upload"; 
     }
+
+    // Guardado en la Nube
+    db.ref('empanada_control/').set({
+        inventario: inventario,
+        insumos: insumos,
+        deudores: deudores,
+        balance: balance,
+        historial: historial,
+        historicoAcumulado: historicoAcumulado
+    }, (error) => {
+        if (error) {
+            if (nube) {
+                nube.className = "material-icons nube-error";
+                nube.innerText = "cloud_off";
+            }
+        } else {
+            if (nube) {
+                setTimeout(() => {
+                    nube.className = "material-icons nube-sincronizada";
+                    nube.innerText = "cloud_done";
+                }, 500); 
+            }
+        }
+    });
 }
 
 function actualizarPantalla() {
@@ -306,7 +229,117 @@ function actualizarPantalla() {
     }
 }
 
-// 🧮 CALCULADORA DE VUELTOS Y CARRITO
+// ========================================================
+// 🧍 CONTROL DE FIADOS (DEUDORES)
+// ========================================================
+function agregarDeuda() {
+    const clienteInp = document.getElementById('deuda-cliente');
+    const montoInp = document.getElementById('deuda-monto');
+    const nombre = clienteInp.value.trim();
+    const monto = parseFloat(montoInp.value);
+
+    if (!nombre || isNaN(monto) || monto <= 0) return alert("Escribe el nombre y cuánto debe.");
+    deudores.push({ id: Date.now(), nombre: nombre, monto: monto });
+
+    guardarEnMemoria(); actualizarPantalla();
+    clienteInp.value = ''; montoInp.value = '';
+}
+
+function pagarDeuda(id) {
+    const deudorIndex = deudores.findIndex(d => d.id === id);
+    if (deudorIndex === -1) return;
+    const deudor = deudores[deudorIndex];
+    if (confirm(`¿Confirmas que ${deudor.nombre} pagó $${deudor.monto}?`)) {
+        balance += deudor.monto;
+        deudores.splice(deudorIndex, 1);
+        guardarEnMemoria(); actualizarPantalla();
+    }
+}
+
+// ========================================================
+// 📦 INSUMOS Y PRODUCTOS
+// ========================================================
+function agregarInsumo() {
+    const nombreInp = document.getElementById('insumo-nombre');
+    const costoInp = document.getElementById('insumo-costo');
+    const cantInp = document.getElementById('insumo-cantidad');
+
+    const nombre = nombreInp.value.trim();
+    const costo = parseFloat(costoInp.value);
+    const cantidad = parseFloat(cantInp.value);
+
+    if (!nombre || isNaN(costo) || isNaN(cantidad) || cantidad <= 0) return alert("Datos inválidos.");
+
+    insumos.push({
+        id: Date.now(), nombre: nombre, costoTotal: costo, cantidadTotal: cantidad, costoUnitario: costo / cantidad
+    });
+    guardarEnMemoria(); actualizarPantalla();
+    nombreInp.value = ''; costoInp.value = ''; cantInp.value = '';
+}
+
+function eliminarInsumo(id) {
+    if (confirm("¿Eliminar este insumo?")) {
+        insumos = insumos.filter(i => i.id !== id);
+        guardarEnMemoria(); actualizarPantalla();
+    }
+}
+
+function agregarProducto() {
+    const nombreInput = document.getElementById('nuevo-nombre');
+    const precioInput = document.getElementById('nuevo-precio');
+    const stockInput = document.getElementById('nuevo-stock');
+
+    const nombre = nombreInput.value.trim();
+    const precio = parseFloat(precioInput.value);
+    const stock = parseInt(stockInput.value);
+
+    if (!nombre || isNaN(precio) || isNaN(stock)) return alert("Rellena todos los campos.");
+
+    let costoProduccionUnidad = 0;
+    let recetaGuardada = [];
+    insumos.forEach(insumo => {
+        const inputCheck = document.getElementById(`check-insumo-${insumo.id}`);
+        const inputCant = document.getElementById(`cant-insumo-${insumo.id}`);
+        if (inputCheck && inputCheck.checked) {
+            const cantidadUsada = parseFloat(inputCant.value) || 0;
+            if (cantidadUsada > 0) {
+                costoProduccionUnidad += (insumo.costoUnitario * cantidadUsada);
+                recetaGuardada.push({ insumoId: insumo.id, cantidad: cantidadUsada });
+            }
+        }
+    });
+
+    inventario.push({
+        id: Date.now(), nombre: nombre, precio: precio, stock: stock,
+        costoProduccion: costoProduccionUnidad, ganancia: precio - costoProduccionUnidad, receta: recetaGuardada
+    });
+
+    guardarEnMemoria(); actualizarPantalla();
+    nombreInput.value = ''; precioInput.value = ''; stockInput.value = '';
+}
+
+function eliminarProducto(id) {
+    if (confirm("¿Eliminar producto?")) {
+        inventario = inventario.filter(p => p.id !== id);
+        guardarEnMemoria(); actualizarPantalla();
+    }
+}
+
+function editarStockProducto(id) {
+    const producto = inventario.find(p => p.id === id);
+    if (!producto) return;
+    const nuevoStockStr = prompt(`Editar stock para "${producto.nombre}":`, producto.stock);
+    if (nuevoStockStr !== null) {
+        const nuevoStock = parseInt(nuevoStockStr);
+        if (!isNaN(nuevoStock) && nuevoStock >= 0) {
+            producto.stock = nuevoStock; guardarEnMemoria(); actualizarPantalla();
+        } else { alert("Número inválido."); }
+    }
+}
+
+// ========================================================
+// 💰 VENTAS, CARRITO Y VUELTOS
+// ========================================================
 let totalVentaActual = 0;
 let callbackConfirmarVenta = null;
 
@@ -350,6 +383,37 @@ function agregarAlCarrito(id) {
 
 function limpiarCarrito() { carrito = []; guardarEnMemoria(); actualizarPantalla(); }
 
+function venderUno(id) {
+    const producto = inventario.find(p => p.id === id);
+    if (!producto || producto.stock <= 0) return;
+
+    abrirCalculadoraVueltos(producto.precio, function() {
+        producto.stock -= 1;
+        balance += producto.precio;
+        const hora = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        
+        const ventaExistente = historial.find(h => h.hora === hora);
+        if (ventaExistente) {
+            ventaExistente.total += producto.precio;
+            ventaExistente.detalle = ventaExistente.detalle.replace(/\+/g, ',');
+            let items = ventaExistente.detalle.split(", ");
+            let encontrados = false;
+            for(let i = 0; i < items.length; i++) {
+                if(items[i].includes(producto.nombre)) {
+                    let partes = items[i].split(" ");
+                    items[i] = (parseInt(partes[0]) + 1) + " " + producto.nombre;
+                    encontrados = true; break;
+                }
+            }
+            if(!encontrados) items.push("1 " + producto.nombre);
+            ventaExistente.detalle = items.join(", ");
+        } else {
+            historial.unshift({ productoId: producto.id, detalle: "1 " + producto.nombre, total: producto.precio, hora: hora });
+        }
+        guardarEnMemoria(); actualizarPantalla();
+    });
+}
+
 function cobrarVenta() {
     if (carrito.length === 0) return;
     let total = carrito.reduce((sum, p) => sum + p.precio, 0);
@@ -366,18 +430,30 @@ function cobrarVenta() {
     });
 }
 
-function editarStockProducto(id) {
-    const producto = inventario.find(p => p.id === id);
-    if (!producto) return;
-    const nuevoStockStr = prompt(`Editar stock para "${producto.nombre}":`, producto.stock);
-    if (nuevoStockStr !== null) {
-        const nuevoStock = parseInt(nuevoStockStr);
-        if (!isNaN(nuevoStock) && nuevoStock >= 0) {
-            producto.stock = nuevoStock; guardarEnMemoria(); actualizarPantalla();
-        } else { alert("Número inválido."); }
-    }
+function deshacerVenta(index) {
+    const venta = historial[index];
+    balance -= venta.total;
+    if (balance < 0) balance = 0;
+
+    let items = venta.detalle.split(", ");
+    items.forEach(item => {
+        let nombreProducto = item.substring(item.indexOf(' ') + 1);
+        const producto = inventario.find(p => p.nombre === nombreProducto);
+        if (producto) producto.stock += parseInt(item.split(" ")[0]);
+    });
+    historial.splice(index, 1);
+    guardarEnMemoria(); actualizarPantalla();
 }
 
+function obtenerResumenCarrito(listaProductos) {
+    const conteo = {};
+    listaProductos.forEach(prod => { conteo[prod.nombre] = (conteo[prod.nombre] || 0) + 1; });
+    return Object.entries(conteo).map(([nombre, cant]) => `${cant} ${nombre}`).join(", "); 
+}
+
+// ========================================================
+// 📊 HISTORIAL, CIERRES DE CAJA Y ACUMULADO
+// ========================================================
 function mostrarHistorialCierres() {
     const divModal = document.getElementById('modal-historial-cierres');
     const divLista = document.getElementById('lista-cierres-dia-a-dia');
@@ -396,13 +472,7 @@ function mostrarHistorialCierres() {
     divModal.style.display = 'flex';
 }
 
-function obtenerResumenCarrito(listaProductos) {
-    const conteo = {};
-    listaProductos.forEach(prod => { conteo[prod.nombre] = (conteo[prod.nombre] || 0) + 1; });
-    return Object.entries(conteo).map(([nombre, cant]) => `${cant} ${nombre}`).join(", "); 
-}
-
-// 🔥 EDICIÓN CORRECTA
+// 🔥 EDICIÓN CORRECTA DE ACUMULADO TOTAL
 function editarAcumuladoTotal() {
     let dineroDiasAnteriores = historicoAcumulado.reduce((sum, dia) => sum + (parseFloat(dia.balanceFinal) || 0), 0);
     let saldoActualTotal = dineroDiasAnteriores + balance;
@@ -414,7 +484,7 @@ function editarAcumuladoTotal() {
             historicoAcumulado = [{
                 id: Date.now(),
                 fecha: "Ajuste Manual",
-                balanceFinal: nuevoValor - balance
+                balanceFinal: nuevoValor - balance // 🔥 Esto hace que la matemática sea perfecta con la venta abierta de hoy
             }];
             guardarEnMemoria();
             actualizarPantalla();
@@ -422,7 +492,7 @@ function editarAcumuladoTotal() {
     }
 }
 
-// 🔥 CIERRE CORRECTO
+// 🔥 CIERRE DE CAJA CORRECTO
 function cerrarCaja() {
     if (balance <= 0) return alert("No hay dinero en el balance de hoy para cerrar.");
     
@@ -431,12 +501,49 @@ function cerrarCaja() {
         const fecha = ahora.toLocaleDateString('es-CO') + " " + ahora.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         
         if (!Array.isArray(historicoAcumulado)) historicoAcumulado = [];
+        
         historicoAcumulado.push({
             id: Date.now(), fecha: fecha, balanceFinal: balance, ventasDetalle: [...historial]
         });
 
-        balance = 0; historial = []; 
-        guardarEnMemoria(); actualizarPantalla();
+        balance = 0; 
+        historial = []; 
+        guardarEnMemoria(); 
+        actualizarPantalla();
         alert("¡Caja cerrada y acumulada correctamente!");
     }
 }
+
+// --- CIERRE DE CAJA AUTOMÁTICO A LAS 12 DE LA NOCHE ---
+function verificarCierreDeDia() {
+    const ahora = new Date();
+    const hoyStr = ahora.toLocaleDateString('es-CO');
+    let ultimaFechaControl = localStorage.getItem('empanadas_fecha_control');
+
+    if (!ultimaFechaControl) {
+        localStorage.setItem('empanadas_fecha_control', hoyStr);
+        return;
+    }
+
+    if (ultimaFechaControl !== hoyStr) {
+        let balanceAyer = balance;
+        let historialAyer = historial;
+
+        if (balanceAyer > 0 || historialAyer.length > 0) {
+            historicoAcumulado.push({
+                id: Date.now(),
+                fecha: ultimaFechaControl,
+                balanceFinal: balanceAyer,
+                ventasDetalle: historialAyer
+            });
+        }
+
+        balance = 0;
+        historial = [];
+        localStorage.setItem('empanadas_fecha_control', hoyStr);
+        guardarEnMemoria();
+    }
+}
+
+verificarCierreDeDia();
+setInterval(verificarCierreDeDia, 60000);
