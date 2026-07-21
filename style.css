@@ -280,69 +280,47 @@ button, input, select, textarea {
 }
 
 /* =========================================
-   EFECTO DE LIBRETA 3D (PÁGINAS APILADAS)
+   PAGINACIÓN LIMPIA Y FLUIDA (ESTILO PLAY LIBROS)
    ========================================= */
 
 .container {
-    display: grid; 
-    perspective: 1500px; 
-    overflow: hidden; 
-    /* 🔥 NUEVAS LÍNEAS DE SEGURIDAD 🔥 */
-    position: relative; 
-    z-index: 1; /* Obliga a que todo el papel se quede detrás del menú */
-    padding-bottom: 80px; /* Le da espacio para que el menú no tape tus listas */
+    overflow: hidden;
+    position: relative;
 }
 
-
 .pestana-contenido {
-    grid-area: 1 / 1; /* Obliga a todas las páginas a estar en el mismo lugar */
-    opacity: 0;
-    pointer-events: none; /* Desactiva los toques en hojas ocultas */
-    z-index: 1;
-    
+    display: none;
     background-color: #fdfbf7;
     background-image: linear-gradient(#e1e1e1 1px, transparent 1px);
     background-size: 100% 32px; 
     min-height: 85vh;
     border-radius: 4px 12px 12px 4px;
-    
-    /* Agregamos una sombra interna para simular el lomo del libro a la izquierda */
-    box-shadow: inset 10px 0 15px -10px rgba(0,0,0,0.2), 0 4px 15px rgba(0,0,0,0.05); 
-    border-left: 2px solid #dcd1c4;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    border-left: 4px solid #dcd1c4;
     padding-bottom: 20px;
-    
-    transform-origin: left center; /* El giro se hace desde la izquierda */
-    backface-visibility: hidden; /* Hace invisible la parte trasera de la hoja */
-    transform: rotateY(0deg); 
 }
 
-/* Página actual que estás viendo */
 .pestana-contenido.activa {
-    opacity: 1;
-    pointer-events: auto;
-    z-index: 2; /* Se coloca encima de las apagadas */
+    display: block;
 }
 
-/* ➡️ Animación Adelante: La hoja actual se levanta y se voltea hacia la izquierda */
-.hoja-pasando-adelante {
-    animation: voltearHoja 0.5s ease-in forwards;
-    z-index: 5 !important; /* Obligamos a que la hoja que gira esté por encima de todo */
+/* ➡️ Animación fluida hacia adelante */
+.animar-adelante {
+    animation: deslizarDerecha 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }
 
-/* ⬅️ Animación Atrás: La hoja anterior "cae" desde la izquierda */
-.hoja-pasando-atras {
-    animation: caerHoja 0.5s ease-out forwards;
-    z-index: 5 !important;
+/* ⬅️ Animación fluida hacia atrás */
+.animar-atras {
+    animation: deslizarIzquierda 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }
 
-/* Control del movimiento 3D y la sombra (se oscurece un poco al girar) */
-@keyframes voltearHoja {
-    0% { transform: rotateY(0deg); filter: brightness(1); }
-    100% { transform: rotateY(-90deg); filter: brightness(0.7); } 
+@keyframes deslizarDerecha {
+    0% { opacity: 0; transform: translateX(30px); }
+    100% { opacity: 1; transform: translateX(0); }
 }
 
-@keyframes caerHoja {
-    0% { transform: rotateY(-90deg); filter: brightness(0.7); opacity: 1; }
-    100% { transform: rotateY(0deg); filter: brightness(1); opacity: 1; }
+@keyframes deslizarIzquierda {
+    0% { opacity: 0; transform: translateX(-30px); }
+    100% { opacity: 1; transform: translateX(0); }
 }
 
