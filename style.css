@@ -288,3 +288,44 @@ header p {
     from { opacity: 0.4; }
     to { opacity: 1; }
 }
+
+/* --- NUEVOS ESTILOS PARA LA BARRA SUPERIOR DE ZAMPA --- */
+.header-control {
+    background-color: #29b6f6;
+    padding: 15px 20px;
+    color: white;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.header-main {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    position: relative;
+}
+
+.logo-zampa {
+    height: 60px;
+    object-fit: contain;
+    filter: drop-shadow(2px 2px 3px rgba(0,0,0,0.3));
+    margin: 0 auto;
+}
+
+.nube-sincronizada {
+    position: absolute;
+    right: 0;
+    font-size: 24px;
+}
+
+.header-subtittle {
+    margin: 8px 0 0 0;
+    font-size: 13px;
+    opacity: 0.90;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+}
