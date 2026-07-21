@@ -25,15 +25,15 @@ let balance = parseFloat(localStorage.getItem('empanadas_balance')) || 0;
 let historial = JSON.parse(localStorage.getItem('empanadas_historial')) || [];
 let historicoAcumulado = JSON.parse(localStorage.getItem('empanadas_historico_general')) || [];
 let carrito = [];
+let nubeLista = false; // Este es nuestro candado de seguridad
+
 
 actualizarPantalla();
+
 
 // ========================================================
 // ☁️ SINCRONIZACIÓN EN TIEMPO REAL CON FIREBASE
 // ========================================================
-// Al usar .on() en lugar de .once(), la app "escucha" los cambios 
-// que hacen otros teléfonos y se actualiza sola al instante.
-
 db.ref('empanada_control/').on('value', (snapshot) => {
     const data = snapshot.val();
     
@@ -48,19 +48,26 @@ db.ref('empanada_control/').on('value', (snapshot) => {
             historicoAcumulado = data.historicoAcumulado;
             localStorage.setItem('empanadas_historico_general', JSON.stringify(historicoAcumulado));
         }
-        
-        // Cada vez que llega un dato nuevo de otro teléfono, repintamos la pantalla
-        actualizarPantalla();
     }
+    
+    // 🔥 ABRIMOS EL CANDADO: Ya tenemos los datos reales de la nube
+    nubeLista = true;
+    
+    // Repintamos la pantalla con la verdad absoluta
+    actualizarPantalla();
 }, (error) => {
     console.error("Error conectando a Firebase en tiempo real:", error);
 });
+
 
 
 // ========================================================
 // 🔄 FUNCIONES DE GUARDADO Y PANTALLA
 // ========================================================
 function guardarEnMemoria() {
+    // 🔥 Si la nube no ha mandado los datos, BLOQUEAMOS el guardado para no dañar la base de datos
+    if (!nubeLista) return;
+
     // Guardado Local
     localStorage.setItem('empanadas_inventario', JSON.stringify(inventario));
     localStorage.setItem('empanadas_insumos', JSON.stringify(insumos));
@@ -530,10 +537,13 @@ function cerrarCaja() {
 
 // --- CIERRE DE CAJA AUTOMÁTICO A LAS 12 DE LA NOCHE ---
 function verificarCierreDeDia() {
+    // 🔥 Bloqueamos la revisión de fechas si la nube no ha cargado
+    if (!nubeLista) return;
+
     const ahora = new Date();
     const hoyStr = ahora.toLocaleDateString('es-CO');
     let ultimaFechaControl = localStorage.getItem('empanadas_fecha_control');
-
+    
     if (!ultimaFechaControl) {
         localStorage.setItem('empanadas_fecha_control', hoyStr);
         return;
