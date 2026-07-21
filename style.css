@@ -279,42 +279,44 @@ button, input, select, textarea {
     perspective: 1200px; 
 }
 
-/* Estética de hoja de papel para las secciones */
+/* =========================================
+   ESTÉTICA DE LIBRETA (ESTILO PLAY LIBROS)
+   ========================================= */
+
 .pestana-contenido {
     display: none;
     background-color: #fdfbf7; /* Color marfil de papel */
     background-image: linear-gradient(#e1e1e1 1px, transparent 1px); /* Líneas de libreta */
-    background-size: 100% 32px; /* Separación de las líneas */
+    background-size: 100% 32px; 
     min-height: 85vh;
     border-radius: 4px 12px 12px 4px;
-    box-shadow: 5px 5px 15px rgba(0,0,0,0.08);
-    border-left: 4px solid #dcd1c4; /* Simula el doblez o lomo izquierdo */
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05); /* Sombra mucho más suave y sutil */
+    border-left: 4px solid #dcd1c4; /* Lomo izquierdo de la libreta */
     padding-bottom: 20px;
-    
-    /* El eje de rotación es la izquierda (como un cuaderno normal) */
-    transform-origin: left center; 
 }
 
 .pestana-contenido.activa {
     display: block;
 }
 
-/* ➡️ Animación hacia adelante */
+/* ➡️ Animación limpia hacia adelante */
 .animar-adelante {
-    animation: pasarHojaDerecha 0.5s cubic-bezier(0.645, 0.045, 0.355, 1) forwards;
+    /* Usamos una curva cubic-bezier idéntica a las apps de Google */
+    animation: deslizarDerecha 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }
 
-/* ⬅️ Animación hacia atrás */
+/* ⬅️ Animación limpia hacia atrás */
 .animar-atras {
-    animation: pasarHojaIzquierda 0.5s cubic-bezier(0.645, 0.045, 0.355, 1) forwards;
+    animation: deslizarIzquierda 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }
 
-@keyframes pasarHojaDerecha {
-    0% { opacity: 0; transform: rotateY(90deg); }
-    100% { opacity: 1; transform: rotateY(0deg); }
+/* El movimiento es horizontal y suave, sin distorsión 3D */
+@keyframes deslizarDerecha {
+    0% { opacity: 0; transform: translateX(40px); }
+    100% { opacity: 1; transform: translateX(0); }
 }
 
-@keyframes pasarHojaIzquierda {
-    0% { opacity: 0; transform: rotateY(-90deg); }
-    100% { opacity: 1; transform: rotateY(0deg); }
+@keyframes deslizarIzquierda {
+    0% { opacity: 0; transform: translateX(-40px); }
+    100% { opacity: 1; transform: translateX(0); }
 }
