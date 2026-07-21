@@ -10,7 +10,7 @@
 </head>
 <body>
 
-        <header class="header-control">
+    <header class="header-control">
         <span class="material-icons header-icon" style="opacity: 0.8;">storefront</span>
         
         <!-- Tu logo de Zampa con diseño de lettering propio -->
@@ -26,7 +26,7 @@
         <!-- PESTAÑA 1: VENTAS (CON BALANCE AJUSTABLE Y DEUDORES) -->
         <div id="pantalla-ventas" class="pestana-contenido activa">
             <!-- BALANCE DEL DINERO -->
-                               <div class="card balance-card" onclick="mostrarHistorialCierres()" style="cursor: pointer;">
+            <div class="card balance-card" onclick="mostrarHistorialCierres()" style="cursor: pointer;">
                 <span class="balance-title">Balance de Ventas (Hoy)</span>
                 <div id="balance-total">$0</div>
 				<div id="saldo-gran-total" style="font-size: 14px; opacity: 0.85; margin-top: 4px; font-weight: normal;">Acumulado Total: $0</div>
@@ -35,6 +35,7 @@
                     <span style="cursor:pointer; display:flex; align-items:center; gap:3px; opacity:0.9;" onclick="cerrarCaja()"><span class="material-icons" style="font-size:14px;">autorenew</span> Cerrar Caja</span>
                 </div>
             </div>
+            
             <!-- REGISTRAR NUEVA VENTA -->
             <div class="card">
                 <h2><span class="material-icons">shopping_basket</span> Registrar Venta</h2>
@@ -42,7 +43,7 @@
                 <!-- LISTA DE PRODUCTOS -->
                 <div id="lista-ventas-disponibles"></div>
                 
-                <!-- NUEVO: CARRITO DE COMPRAS -->
+                <!-- CARRITO DE COMPRAS -->
                 <div id="seccion-carrito" style="margin-top:20px; border-top:2px solid #eee; padding-top:15px; display:none;">
                     <h3 style="font-size:14px; color:#555;">Resumen del pedido:</h3>
                     <div id="lista-carrito"></div>
@@ -54,10 +55,8 @@
                 </div>
             </div>
 
-
-                     <!-- 🔥 SECCIÓN MEJORADA: CONTROL DE DEUDORES DESPLEGABLE -->
+            <!-- CONTROL DE DEUDORES DESPLEGABLE -->
             <div class="card" style="border-left: 5px solid #e53935; padding: 0;">
-                <!-- Barra de título que funciona como botón para abrir/cerrar -->
                 <div onclick="toggleDeudores()" style="display: flex; justify-content: space-between; align-items: center; padding: 16px; cursor: pointer; user-select: none;">
                     <h2 style="margin-bottom: 0; color: #e53935;">
                         <span class="material-icons">assignment_ind</span> Clientes Deudores (Fiados)
@@ -65,7 +64,6 @@
                     <span class="material-icons" id="flecha-deudores" style="color: #e53935; transition: transform 0.3s;">expand_more</span>
                 </div>
 
-                <!-- Contenedor oculto por defecto -->
                 <div id="contenido-deudores" style="display: none; padding: 0 16px 16px 16px; border-top: 1px solid #ffeae8;">
                     <div class="formulario" style="background: #fff5f5; padding: 10px; border-radius: 8px; margin-top: 10px; margin-bottom: 12px;">
                         <p style="font-size: 11px; font-weight: bold; margin-bottom: 5px; color: #c62828;">Anotar nueva deuda:</p>
@@ -77,13 +75,11 @@
                             <span class="material-icons" style="font-size:16px;">person_add</span> Guardar en la Lista
                         </button>
                     </div>
-                    <div id="lista-deudores" style="max-height: 200px; overflow-y: auto;">
-                        <!-- Aquí se listan los deudores -->
-                    </div>
+                    <div id="lista-deudores" style="max-height: 200px; overflow-y: auto;"></div>
                 </div>
             </div>
 
-            <!-- 🧮 CUADRO FLOTANTE: CALCULADORA DE VUELTOS (MODAL) -->
+            <!-- CALCULADORA DE VUELTOS (MODAL) -->
             <div id="modal-vueltos" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
                 <div style="background: white; width: 90%; max-width: 360px; padding: 20px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); text-align: center; box-sizing: border-box;">
                     <h3 style="margin-top: 0; color: #2e7d32; display: flex; align-items: center; justify-content: center; gap: 5px;">
@@ -94,7 +90,6 @@
                     <p style="margin: 10px 0 5px 0; font-size: 14px; color: #555; text-align: left; font-weight: bold;">¿Con cuánto paga el cliente?</p>
                     <input type="number" id="vueltos-paga-con" placeholder="Ej: 5000, 10000, 20000" style="width: 100%; padding: 12px; font-size: 18px; border: 2px solid #a5d6a7; border-radius: 8px; margin-bottom: 15px; text-align: center; box-sizing: border-box;" oninput="calcularCambio()">
 
-                    <!-- Botones rápidos de efectivo común -->
                     <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 15px;">
                         <button type="button" style="padding: 8px 4px; border: 1px solid #ccc; background: #f5f5f5; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer;" onclick="definirPagoRapido(2000)">$2.000</button>
                         <button type="button" style="padding: 8px 4px; border: 1px solid #ccc; background: #f5f5f5; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer;" onclick="definirPagoRapido(5000)">$5.000</button>
@@ -207,77 +202,69 @@
             <span>QR Pago</span>
         </button>
     </div>
-<script>
 
-<script>
-    const ordenPestanas = ['pantalla-ventas', 'pantalla-inventario', 'pantalla-insumos', 'pantalla-pagos'];
-    let indiceActual = 0;
+    <!-- VENTANA FLOTANTE: HISTORIAL DE CIERRES DIARIOS -->
+    <div id="modal-historial-cierres" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+        <div style="background: white; width: 90%; max-width: 360px; padding: 20px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); box-sizing: border-box;">
+            
+            <h3 style="margin-top: 0; text-align: center; color: #1565c0; display: flex; align-items: center; justify-content: center; gap: 5px;">
+                <span class="material-icons">history</span> Historial de Días
+            </h3>
+            
+            <button onclick="agregarDiaDeLibreta()" class="btn-material" style="background-color: #ff9800; width: 100%; margin-bottom: 15px; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px; border-radius: 8px;">
+                <span class="material-icons">menu_book</span> Agregar día de libreta
+            </button>
 
-    function cambiarPestaña(idPestaña, botonActivo) {
-        const indiceNuevo = ordenPestanas.indexOf(idPestaña);
-        if (indiceNuevo === indiceActual) return;
-
-        const direccion = indiceNuevo > indiceActual ? 'animar-adelante' : 'animar-atras';
-
-        document.querySelectorAll('.pestana-contenido').forEach(p => {
-            p.classList.remove('activa', 'animar-adelante', 'animar-atras');
-        });
-        document.querySelectorAll('.dock-item').forEach(b => b.classList.remove('activo'));
-        
-        const nuevaPestana = document.getElementById(idPestaña);
-        nuevaPestana.classList.add('activa', direccion);
-        botonActivo.classList.add('activo');
-        
-        indiceActual = indiceNuevo;
-        window.scrollTo(0,0);
-    }
-
-    // Función de deudores blindada para que abra al primer toque
-    function toggleDeudores() {
-        const contenido = document.getElementById('contenido-deudores');
-        const flecha = document.getElementById('flecha-deudores');
-        
-        if (!contenido) return;
-
-        if (contenido.style.display === 'none' || contenido.style.display === '') {
-            contenido.style.display = 'block';
-            if (flecha) flecha.style.transform = 'rotate(180deg)';
-        } else {
-            contenido.style.display = 'none';
-            if (flecha) flecha.style.transform = 'rotate(0deg)';
-        }
-    }
-</script>
-
-
-   <!-- Cargar los servicios de Firebase en la Nube -->
-<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
-
-    <script src="app.js"></script>
-	
-<!-- VENTANA FLOTANTE: HISTORIAL DE CIERRES DIARIOS -->
-<div id="modal-historial-cierres" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
-    <div style="background: white; width: 90%; max-width: 360px; padding: 20px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); box-sizing: border-box;">
-        
-        <h3 style="margin-top: 0; text-align: center; color: #1565c0; display: flex; align-items: center; justify-content: center; gap: 5px;">
-            <span class="material-icons">history</span> Historial de Días
-        </h3>
-        
-        <!-- 🔥 BOTÓN DE LA LIBRETA 🔥 -->
-        <button onclick="agregarDiaDeLibreta()" class="btn-material" style="background-color: #ff9800; width: 100%; margin-bottom: 15px; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px; border-radius: 8px;">
-            <span class="material-icons">menu_book</span> Agregar día de libreta
-        </button>
-
-        <!-- Esta es la lista donde ya se muestran tus cierres -->
-        <div id="lista-cierres-dia-a-dia" style="max-height: 300px; overflow-y: auto; margin-bottom: 15px;"></div>
-        
-        <!-- BOTÓN DE CERRAR -->
-        <button onclick="document.getElementById('modal-historial-cierres').style.display='none'" class="btn-material" style="background-color: #757575; width: 100%; padding: 12px; border-radius: 8px;">Cerrar</button>
+            <div id="lista-cierres-dia-a-dia" style="max-height: 300px; overflow-y: auto; margin-bottom: 15px;"></div>
+            
+            <button onclick="document.getElementById('modal-historial-cierres').style.display='none'" class="btn-material" style="background-color: #757575; width: 100%; padding: 12px; border-radius: 8px;">Cerrar</button>
+        </div>
     </div>
-</div>
 
+    <!-- SCRIPTS DE FUNCIONALIDAD -->
+    <script>
+        const ordenPestanas = ['pantalla-ventas', 'pantalla-inventario', 'pantalla-insumos', 'pantalla-pagos'];
+        let indiceActual = 0;
 
+        function cambiarPestaña(idPestaña, botonActivo) {
+            const indiceNuevo = ordenPestanas.indexOf(idPestaña);
+            if (indiceNuevo === indiceActual) return;
+
+            const direccion = indiceNuevo > indiceActual ? 'animar-adelante' : 'animar-atras';
+
+            document.querySelectorAll('.pestana-contenido').forEach(p => {
+                p.classList.remove('activa', 'animar-adelante', 'animar-atras');
+            });
+            document.querySelectorAll('.dock-item').forEach(b => b.classList.remove('activo'));
+            
+            const nuevaPestana = document.getElementById(idPestaña);
+            if(nuevaPestana) nuevaPestana.classList.add('activa', direccion);
+            if(botonActivo) botonActivo.classList.add('activo');
+            
+            indiceActual = indiceNuevo;
+            window.scrollTo(0,0);
+        }
+
+        function toggleDeudores() {
+            const contenido = document.getElementById('contenido-deudores');
+            const flecha = document.getElementById('flecha-deudores');
+            
+            if (!contenido) return;
+
+            if (contenido.style.display === 'none' || contenido.style.display === '') {
+                contenido.style.display = 'block';
+                if (flecha) flecha.style.transform = 'rotate(180deg)';
+            } else {
+                contenido.style.display = 'none';
+                if (flecha) flecha.style.transform = 'rotate(0deg)';
+            }
+        }
+    </script>
+
+    <!-- Firebase y App principal -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+    <script src="app.js"></script>
 
 </body>
 </html>
