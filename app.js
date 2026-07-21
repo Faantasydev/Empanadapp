@@ -110,9 +110,10 @@ function actualizarPantalla() {
     }
     let saldoGranTotal = dineroDiasAnteriores + balance;
     
-    const divGranTotal = document.getElementById('saldo-gran-total');
+       const divGranTotal = document.getElementById('saldo-gran-total');
     if (divGranTotal) {
-        divGranTotal.innerHTML = `Acumulado Total: <span style="text-decoration: underline; cursor: pointer; color: #ffeb3b;" onclick="editarAcumuladoTotal()">$${saldoGranTotal.toLocaleString('es-CO')}</span>`;
+        // Fíjate que ahora dice onclick="editarAcumuladoTotal(event)"
+        divGranTotal.innerHTML = `Acumulado Total: <span style="text-decoration: underline; cursor: pointer; color: #ffeb3b;" onclick="editarAcumuladoTotal(event)">$${saldoGranTotal.toLocaleString('es-CO')}</span>`;
     }
 
     const divVentas = document.getElementById('lista-ventas-disponibles');
@@ -479,8 +480,13 @@ function mostrarHistorialCierres() {
     divModal.style.display = 'flex';
 }
 
-// 🔥 EDICIÓN CORRECTA DE ACUMULADO TOTAL
-function editarAcumuladoTotal() {
+// 🔥 EDICIÓN CORRECTA DE ACUMULADO TOTAL (SIN ABRIR EL HISTORIAL)
+function editarAcumuladoTotal(event) {
+    // 🛑 FRENAMOS EL CLIC AQUÍ PARA QUE NO ABRA EL RECUADRO AZUL
+    if (event) {
+        event.stopPropagation();
+    }
+
     let dineroDiasAnteriores = historicoAcumulado.reduce((sum, dia) => sum + (parseFloat(dia.balanceFinal) || 0), 0);
     let saldoActualTotal = dineroDiasAnteriores + balance;
 
@@ -491,13 +497,14 @@ function editarAcumuladoTotal() {
             historicoAcumulado = [{
                 id: Date.now(),
                 fecha: "Ajuste Manual",
-                balanceFinal: nuevoValor - balance // 🔥 Esto hace que la matemática sea perfecta con la venta abierta de hoy
+                balanceFinal: nuevoValor - balance
             }];
             guardarEnMemoria();
             actualizarPantalla();
         }
     }
 }
+
 
 // 🔥 CIERRE DE CAJA CORRECTO
 function cerrarCaja() {
