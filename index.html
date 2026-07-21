@@ -208,51 +208,54 @@
         </button>
     </div>
 <script>
-    // Definimos el orden lógico de la libreta (de izquierda a derecha)
-    const ordenPestanas = ['pantalla-ventas', 'pantalla-inventario', 'pantalla-insumos', 'pantalla-pagos'];
-    let indiceActual = 0; // Arrancamos en la página 0 (Ventas)
 
-    function cambiarPestaña(idPestaña, botonActivo) {
-        const indiceNuevo = ordenPestanas.indexOf(idPestaña);
-        
-        // Si tocas la pestaña en la que ya estás, no hace nada
-        if (indiceNuevo === indiceActual) return; 
+// Definimos el orden lógico de las hojas del cuaderno
+const ordenPestanas = ['pantalla-ventas', 'pantalla-inventario', 'pantalla-insumos', 'pantalla-pagos'];
+let indiceActual = 0; 
 
-        // Descubrimos la dirección: ¿vamos adelante o atrás?
-        const direccion = indiceNuevo > indiceActual ? 'animar-adelante' : 'animar-atras';
+function cambiarPestaña(idPestaña, botonActivo) {
+    const indiceNuevo = ordenPestanas.indexOf(idPestaña);
+    if (indiceNuevo === indiceActual) return; // Si tocas la misma hoja, no hace nada
 
-        // 1. Limpiamos todas las pestañas y botones
+    const paginaActual = document.getElementById(ordenPestanas[indiceActual]);
+    const nuevaPagina = document.getElementById(idPestaña);
+    
+    // ¿Vamos hacia adelante o nos devolvemos?
+    const vaHaciaAdelante = indiceNuevo > indiceActual;
+
+    // 1. Limpiamos cualquier animación que se haya quedado trabada
+    document.querySelectorAll('.pestana-contenido').forEach(p => {
+        p.classList.remove('hoja-pasando-adelante', 'hoja-pasando-atras');
+    });
+    document.querySelectorAll('.dock-item').forEach(b => b.classList.remove('activo'));
+    
+    // 2. Preparamos las hojas (hacemos visibles ambas al mismo tiempo)
+    if (vaHaciaAdelante) {
+        // Pasamos a la derecha: La hoja nueva espera abajo, la actual gira y desaparece
+        nuevaPagina.classList.add('activa'); 
+        paginaActual.classList.add('activa', 'hoja-pasando-adelante'); 
+    } else {
+        // Nos devolvemos: La actual se queda esperando abajo, la nueva cae desde la izquierda
+        paginaActual.classList.add('activa'); 
+        nuevaPagina.classList.add('activa', 'hoja-pasando-atras'); 
+    }
+    
+    botonActivo.classList.add('activo');
+
+    // 3. Cuando termine la animación (500 milisegundos), ocultamos la página vieja
+    setTimeout(() => {
         document.querySelectorAll('.pestana-contenido').forEach(p => {
-            p.classList.remove('activa', 'animar-adelante', 'animar-atras');
+            p.classList.remove('hoja-pasando-adelante', 'hoja-pasando-atras');
+            if (p.id !== idPestaña) {
+                p.classList.remove('activa'); // Apagamos definitivamente la hoja vieja
+            }
         });
-        document.querySelectorAll('.dock-item').forEach(b => b.classList.remove('activo'));
-        
-        // 2. Activamos la nueva página con su animación correspondiente
-        const nuevaPestana = document.getElementById(idPestaña);
-        nuevaPestana.classList.add('activa', direccion);
-        botonActivo.classList.add('activo');
-        
-        // 3. Actualizamos en qué página estamos ahora
-        indiceActual = indiceNuevo;
-        
-        // Volvemos arriba de la página por si estabas haciendo scroll
-        window.scrollTo(0,0);
-    }
+    }, 500);
 
-    // ... (Mantén tu función toggleDeudores() intacta aquí abajo)
-    function toggleDeudores() {
-        const contenido = document.getElementById('contenido-deudores');
-        const flecha = document.getElementById('flecha-deudores');
-        
-        if (contenido.style.display === 'none') {
-            contenido.style.display = 'block';
-            flecha.style.transform = 'rotate(180deg)';
-        } else {
-            contenido.style.display = 'none';
-            flecha.style.transform = 'rotate(0deg)';
-        }
-    }
-</script>
+    indiceActual = indiceNuevo;
+    window.scrollTo(0,0);
+}
+
 
 
    <!-- Cargar los servicios de Firebase en la Nube -->
