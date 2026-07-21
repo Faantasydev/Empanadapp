@@ -197,7 +197,7 @@ header p {
     justify-content: space-around;
     align-items: center;
     box-shadow: 0 -3px 10px rgba(0,0,0,0.08);
-    z-index: 2000;
+    ​z-index: 9999 !important;
 }
 
 .dock-item {
