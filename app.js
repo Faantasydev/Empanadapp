@@ -248,28 +248,65 @@ function actualizarPantalla() {
 // 🧍 CONTROL DE FIADOS (DEUDORES)
 // ========================================================
 function agregarDeuda() {
-    const clienteInp = document.getElementById('deuda-cliente');
-    const montoInp = document.getElementById('deuda-monto');
-    const nombre = clienteInp.value.trim();
-    const monto = parseFloat(montoInp.value);
+    const nombreInput = document.getElementById('deuda-cliente');
+    const montoInput = document.getElementById('deuda-monto');
+    
+    if (!nombreInput || !montoInput) return;
 
-    if (!nombre || isNaN(monto) || monto <= 0) return alert("Escribe el nombre y cuánto debe.");
-    deudores.push({ id: Date.now(), nombre: nombre, monto: monto });
+    const nombre = nombreInput.value.trim();
+    let montoBase = parseFloat(montoInput.value);
 
-    guardarEnMemoria(); actualizarPantalla();
-    clienteInp.value = ''; montoInp.value = '';
-}
-
-function pagarDeuda(id) {
-    const deudorIndex = deudores.findIndex(d => d.id === id);
-    if (deudorIndex === -1) return;
-    const deudor = deudores[deudorIndex];
-    if (confirm(`¿Confirmas que ${deudor.nombre} pagó $${deudor.monto}?`)) {
-        balance += deudor.monto;
-        deudores.splice(deudorIndex, 1);
-        guardarEnMemoria(); actualizarPantalla();
+    if (!nombre || isNaN(montoBase) || montoBase <= 0) {
+        alert("Por favor ingresa un nombre válido y un monto mayor a 0.");
+        return;
     }
+
+    // Se le suma el 10% al monto ingresado como pediste
+    const montoConRecargo = montoBase * 1.10;
+
+    // Referencia a tu base de datos o arreglo local de deudores
+    // (Asegúrate de adaptarlo según cómo guardes el objeto del cliente)
+    const dbRef = firebase.database().ref('zampa/deudores'); // Ejemplo con Firebase
+
+    dbRef.once('value', (snapshot) => {
+        let deudores = snapshot.val() || {};
+        let clienteKey = null;
+        let deudaActual = 0;
+
+        // Buscar si el cliente ya existe para sumarle la nueva deuda con su recargo
+        for (let key in deudores) {
+            if (deudores[key].nombre.toLowerCase() === nombre.toLowerCase()) {
+                clienteKey = key;
+                deudaActual = deudores[key].monto;
+                break;
+            }
+        }
+
+        if (clienteKey) {
+            // Si ya existe, acumulamos la nueva deuda con recargo a la anterior
+            let nuevaDeudaTotal = deudaActual + montoConRecargo;
+            firebase.database().ref('zampa/deudores/' + clienteKey).update({
+                monto: nuevaDeudaTotal
+            });
+        } else {
+            // Si es un cliente nuevo, lo creamos con su monto y el 10% incluido
+            firebase.database().ref('zampa/deudores').push({
+                nombre: nombre,
+                monto: montoConRecargo
+            });
+        }
+
+        // Limpiar campos
+        nombreInput.value = '';
+        montoInput.value = '';
+        
+        // Recargar la lista visual de deudores
+        if (typeof cargarDeudores === 'function') {
+            cargarDeudores();
+        }
+    });
 }
+
 
 // ========================================================
 // 📦 INSUMOS Y PRODUCTOS
