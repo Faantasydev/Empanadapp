@@ -11,38 +11,30 @@
 <body>
 
     <header class="header-control">
-    <div class="header-main">
-        <img src="logo-zampa.png" alt="Zampa Logo" class="logo-zampa">
-        <span id="icono-nube" class="material-icons nube-sincronizada">cloud</span>
-    </div>
-    <p class="header-subtittle">Punto de Venta e Inventario</p>
-</header>
-
-
+        <div class="header-main">
+            <img src="logo-zampa.png" alt="Zampa Logo" class="logo-zampa">
+            <span id="icono-nube" class="material-icons nube-sincronizada">cloud</span>
+        </div>
+        <p class="header-subtittle">Punto de Venta e Inventario</p>
+    </header>
 
     <div class="container">
         
-        <!-- PESTAÑA 1: VENTAS (CON BALANCE AJUSTABLE Y DEUDORES) -->
         <div id="pantalla-ventas" class="pestana-contenido activa">
-            <!-- BALANCE DEL DINERO -->
             <div class="card balance-card" onclick="mostrarHistorialCierres()" style="cursor: pointer;">
                 <span class="balance-title">Balance de Ventas (Hoy)</span>
                 <div id="balance-total">$0</div>
 				<div id="saldo-gran-total" style="font-size: 14px; opacity: 0.85; margin-top: 4px; font-weight: normal;">Acumulado Total: $0</div>
-              <div style="margin-top: 10px; display: flex; justify-content: center; font-size: 12px;">
-    <span style="cursor:pointer; display:flex; align-items:center; gap:3px; opacity:0.9;" onclick="cerrarCaja()"><span class="material-icons" style="font-size:14px;">autorenew</span> Cerrar Caja</span>
-</div>
-
+                <div style="margin-top: 10px; display: flex; justify-content: center; font-size: 12px;">
+                    <span style="cursor:pointer; display:flex; align-items:center; gap:3px; opacity:0.9;" onclick="event.stopPropagation(); cerrarCaja();"><span class="material-icons" style="font-size:14px;">autorenew</span> Cerrar Caja</span>
+                </div>
             </div>
             
-            <!-- REGISTRAR NUEVA VENTA -->
             <div class="card">
                 <h2><span class="material-icons">shopping_basket</span> Registrar Venta</h2>
                 
-                <!-- LISTA DE PRODUCTOS -->
                 <div id="lista-ventas-disponibles"></div>
                 
-                <!-- CARRITO DE COMPRAS -->
                 <div id="seccion-carrito" style="margin-top:20px; border-top:2px solid #eee; padding-top:15px; display:none;">
                     <h3 style="font-size:14px; color:#555;">Resumen del pedido:</h3>
                     <div id="lista-carrito"></div>
@@ -54,31 +46,6 @@
                 </div>
             </div>
 
-            <!-- CONTROL DE DEUDORES DESPLEGABLE -->
-            <div class="card" style="border-left: 5px solid #e53935; padding: 0;">
-                <div onclick="toggleDeudores()" style="display: flex; justify-content: space-between; align-items: center; padding: 16px; cursor: pointer; user-select: none;">
-                    <h2 style="margin-bottom: 0; color: #e53935;">
-                        <span class="material-icons">assignment_ind</span> Clientes Deudores (Fiados)
-                    </h2>
-                    <span class="material-icons" id="flecha-deudores" style="color: #e53935; transition: transform 0.3s;">expand_more</span>
-                </div>
-
-                <div id="contenido-deudores" style="display: none; padding: 0 16px 16px 16px; border-top: 1px solid #ffeae8;">
-                    <div class="formulario" style="background: #fff5f5; padding: 10px; border-radius: 8px; margin-top: 10px; margin-bottom: 12px;">
-                        <p style="font-size: 11px; font-weight: bold; margin-bottom: 5px; color: #c62828;">Anotar nueva deuda:</p>
-                        <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 10px;">
-                            <input type="text" id="deuda-cliente" placeholder="Nombre del cliente" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box;">
-                            <input type="number" id="deuda-monto" placeholder="¿Cuánto debe? ($)" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box;">
-                        </div>
-                        <button class="btn-material" style="background-color: #e53935; padding: 8px; font-size: 12px;" onclick="agregarDeuda()">
-                            <span class="material-icons" style="font-size:16px;">person_add</span> Guardar en la Lista
-                        </button>
-                    </div>
-                    <div id="lista-deudores" style="max-height: 200px; overflow-y: auto;"></div>
-                </div>
-            </div>
-
-            <!-- CALCULADORA DE VUELTOS (MODAL) -->
             <div id="modal-vueltos" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
                 <div style="background: white; width: 90%; max-width: 360px; padding: 20px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); text-align: center; box-sizing: border-box;">
                     <h3 style="margin-top: 0; color: #2e7d32; display: flex; align-items: center; justify-content: center; gap: 5px;">
@@ -95,7 +62,7 @@
                         <button type="button" style="padding: 8px 4px; border: 1px solid #ccc; background: #f5f5f5; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer;" onclick="definirPagoRapido(10000)">$10.000</button>
                         <button type="button" style="padding: 8px 4px; border: 1px solid #ccc; background: #f5f5f5; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer;" onclick="definirPagoRapido(20000)">$20.000</button>
                         <button type="button" style="padding: 8px 4px; border: 1px solid #ccc; background: #f5f5f5; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer;" onclick="definirPagoRapido(50000)">$50.000</button>
-                        <button type="button" style="padding: 8px 4px; border: 1px solid #ccc; background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer;" onclick="definirPagoExacto()">Exacto</button>
+                        <button type="button" style="padding: 8px 4px; border: 1px solid #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer;" onclick="definirPagoExacto()">Exacto</button>
                     </div>
 
                     <div style="background: #f1f8e9; padding: 12px; border-radius: 8px; margin-bottom: 20px; border: 1px dashed #81c784;">
@@ -114,14 +81,12 @@
                 </div>
             </div>
 
-            <!-- HISTORIAL DE FACTURAS -->
             <div class="card">
                 <h2><span class="material-icons">history</span> Historial de Ventas Diario</h2>
                 <div id="historial-lista"></div>
             </div>
         </div>
 
-        <!-- PESTAÑA 2: INVENTARIO -->
         <div id="pantalla-inventario" class="pestana-contenido">
             <div class="card">
                 <h2><span class="material-icons">add_box</span> Agregar nuevo producto</h2>
@@ -147,7 +112,6 @@
             </div>
         </div>
 
-        <!-- PESTAÑA 3: INSUMOS -->
         <div id="pantalla-insumos" class="pestana-contenido">
             <div class="card">
                 <h2><span class="material-icons">layers</span> Registro de Insumos</h2>
@@ -169,7 +133,6 @@
             </div>
         </div>
 
-        <!-- PESTAÑA 4: MÉTODOS DE PAGO -->
         <div id="pantalla-pagos" class="pestana-contenido">
             <div class="card">
                 <h2><span class="material-icons">qr_code_2</span> Métodos de Pago rápido</h2>
@@ -182,7 +145,6 @@
 
     </div>
 
-    <!-- DOCK INFERIOR -->
     <div class="dock-inferior">
         <button class="dock-item activo" onclick="cambiarPestaña('pantalla-ventas', this)">
             <span class="material-icons">point_of_sale</span>
@@ -202,7 +164,6 @@
         </button>
     </div>
 
-    <!-- VENTANA FLOTANTE: HISTORIAL DE CIERRES DIARIOS -->
     <div id="modal-historial-cierres" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
         <div style="background: white; width: 90%; max-width: 360px; padding: 20px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); box-sizing: border-box;">
             
@@ -220,7 +181,6 @@
         </div>
     </div>
 
-    <!-- SCRIPTS DE FUNCIONALIDAD -->
     <script>
         const ordenPestanas = ['pantalla-ventas', 'pantalla-inventario', 'pantalla-insumos', 'pantalla-pagos'];
         let indiceActual = 0;
@@ -243,24 +203,8 @@
             indiceActual = indiceNuevo;
             window.scrollTo(0,0);
         }
-
-        function toggleDeudores() {
-            const contenido = document.getElementById('contenido-deudores');
-            const flecha = document.getElementById('flecha-deudores');
-            
-            if (!contenido) return;
-
-            if (contenido.style.display === 'none' || contenido.style.display === '') {
-                contenido.style.display = 'block';
-                if (flecha) flecha.style.transform = 'rotate(180deg)';
-            } else {
-                contenido.style.display = 'none';
-                if (flecha) flecha.style.transform = 'rotate(0deg)';
-            }
-        }
     </script>
 
-    <!-- Firebase y App principal -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
     <script src="app.js"></script>
