@@ -20,13 +20,12 @@ const db = firebase.database();
 // ========================================================
 let inventario = JSON.parse(localStorage.getItem('empanadas_inventario')) || [];
 let insumos = JSON.parse(localStorage.getItem('empanadas_insumos')) || [];
-let deudores = JSON.parse(localStorage.getItem('empanadas_deudores')) || [];
+let deudores = {}; // Cambiado a objeto para reflejar de forma exacta la estructura de Firebase
 let balance = parseFloat(localStorage.getItem('empanadas_balance')) || 0;
 let historial = JSON.parse(localStorage.getItem('empanadas_historial')) || [];
 let historicoAcumulado = JSON.parse(localStorage.getItem('empanadas_historico_general')) || [];
 let carrito = [];
 let nubeLista = false; // Este es nuestro candado de seguridad
-
 
 actualizarPantalla();
 
@@ -40,7 +39,7 @@ db.ref('empanada_control/').on('value', (snapshot) => {
     if (data) {
         inventario = data.inventario || [];
         insumos = data.insumos || [];
-        deudores = data.deudores || [];
+        deudores = data.deudores || {}; // Sincroniza correctamente los deudores como objeto/mapa
         balance = data.balance !== undefined ? data.balance : 0;
         historial = data.historial || [];
         
@@ -117,9 +116,8 @@ function actualizarPantalla() {
     }
     let saldoGranTotal = dineroDiasAnteriores + balance;
     
-       const divGranTotal = document.getElementById('saldo-gran-total');
+    const divGranTotal = document.getElementById('saldo-gran-total');
     if (divGranTotal) {
-        // Fíjate que ahora dice onclick="editarAcumuladoTotal(event)"
         divGranTotal.innerHTML = `Acumulado Total: <span style="text-decoration: underline; cursor: pointer; color: #ffeb3b;" onclick="editarAcumuladoTotal(event)">$${saldoGranTotal.toLocaleString('es-CO')}</span>`;
     }
 
@@ -154,17 +152,21 @@ function actualizarPantalla() {
         divCarrito.style.display = 'none';
     }
 
+    // Renderizado corregido de deudores usando las llaves (keys) de Firebase
     const divDeudores = document.getElementById('lista-deudores');
     if(divDeudores) {
-        divDeudores.innerHTML = deudores.length === 0 ? '<p style="color:#757575; font-size:13px;">¡Qué bien! Nadie te debe dinero hoy.</p>' : '';
-        deudores.forEach(deudor => {
+        const keysDeudores = Object.keys(deudores || {});
+        divDeudores.innerHTML = keysDeudores.length === 0 ? '<p style="color:#757575; font-size:13px;">¡Qué bien! Nadie te debe dinero hoy.</p>' : '';
+        
+        keysDeudores.forEach(key => {
+            const deudor = deudores[key];
             divDeudores.innerHTML += `
-                <div class="item-fila" style="border-bottom: 1px solid #ffeae8; padding: 8px 0;">
+                <div class="item-fila" style="border-bottom: 1px solid #ffeae8; padding: 8px 0; display: flex; justify-content: space-between; align-items: center;">
                     <div>
                         <strong style="color:#37474f;">${deudor.nombre}</strong>
-                        <div style="font-size:12px; color:#c62828; font-weight:bold;">Debe: $${deudor.monto.toLocaleString('es-CO')}</div>
+                        <div style="font-size:12px; color:#c62828; font-weight:bold;">Debe: $${parseFloat(deudor.monto || 0).toLocaleString('es-CO')}</div>
                     </div>
-                    <button class="btn-material" style="background-color: #26a69a; padding: 6px 10px; width: auto; font-size:11px;" onclick="pagarDeuda(${deudor.id})">
+                    <button class="btn-material" style="background-color: #26a69a; padding: 6px 10px; width: auto; font-size:11px;" onclick="saldarDeuda('${key}')">
                         <span class="material-icons" style="font-size:14px;">check_circle</span> Pagó
                     </button>
                 </div>`;
@@ -244,7 +246,9 @@ function actualizarPantalla() {
     }
 }
 
-// --- NUEVA LÓGICA DE DEUDORES CON RECARGO DEL 10% ---
+// ========================================================
+// 🤝 GESTIÓN DE DEUDORES (CON RECARGO DEL 10%)
+// ========================================================
 function agregarDeuda() {
     const nombreInput = document.getElementById('deuda-cliente');
     const montoInput = document.getElementById('deuda-monto');
@@ -265,14 +269,14 @@ function agregarDeuda() {
     const dbRef = firebase.database().ref('zampa/deudores');
 
     dbRef.once('value', (snapshot) => {
-        let deudores = snapshot.val() || {};
+        let deudoresData = snapshot.val() || {};
         let clienteKey = null;
         let deudaActual = 0;
 
-        for (let key in deudores) {
-            if (deudores[key].nombre.toLowerCase() === nombre.toLowerCase()) {
+        for (let key in deudoresData) {
+            if (deudoresData[key].nombre.trim().toLowerCase() === nombre.toLowerCase()) {
                 clienteKey = key;
-                deudaActual = deudores[key].monto;
+                deudaActual = deudoresData[key].monto;
                 break;
             }
         }
@@ -291,18 +295,14 @@ function agregarDeuda() {
 
         nombreInput.value = '';
         montoInput.value = '';
-        
-        if (typeof cargarDeudores === 'function') {
-            cargarDeudores();
-        }
     });
 }
 
 function saldarDeuda(key) {
     if (confirm("¿Confirmar que el cliente ha pagado la totalidad de la deuda para retirarlo de la lista?")) {
         firebase.database().ref('zampa/deudores/' + key).remove()
-            .then(() => {
-                if (typeof cargarDeudores === 'function') cargarDeudores();
+            .catch((error) => {
+                alert("Hubo un error al eliminar el registro: " + error.message);
             });
     }
 }
@@ -524,9 +524,7 @@ function mostrarHistorialCierres() {
     divModal.style.display = 'flex';
 }
 
-// 🔥 EDICIÓN CORRECTA DE ACUMULADO TOTAL (SIN ABRIR EL HISTORIAL)
 function editarAcumuladoTotal(event) {
-    // 🛑 FRENAMOS EL CLIC AQUÍ PARA QUE NO ABRA EL RECUADRO AZUL
     if (event) {
         event.stopPropagation();
     }
@@ -549,8 +547,6 @@ function editarAcumuladoTotal(event) {
     }
 }
 
-
-// 🔥 CIERRE DE CAJA CORRECTO
 function cerrarCaja() {
     if (balance <= 0) return alert("No hay dinero en el balance de hoy para cerrar.");
     
@@ -572,9 +568,7 @@ function cerrarCaja() {
     }
 }
 
-// --- CIERRE DE CAJA AUTOMÁTICO A LAS 12 DE LA NOCHE ---
 function verificarCierreDeDia() {
-    // 🔥 Bloqueamos la revisión de fechas si la nube no ha cargado
     if (!nubeLista) return;
 
     const ahora = new Date();
@@ -609,33 +603,26 @@ function verificarCierreDeDia() {
 verificarCierreDeDia();
 setInterval(verificarCierreDeDia, 60000);
 
-// 🔥 AGREGAR DÍAS ANTERIORES DESDE LA LIBRETA FÍSICA
 function agregarDiaDeLibreta() {
-    // 1. Pedimos la fecha
     const fechaIngresada = prompt("Ingresa la fecha del día que quieres registrar (Ejemplo: 05/07/2026):");
-    if (!fechaIngresada || fechaIngresada.trim() === "") return; // Si cancela, no hacemos nada
+    if (!fechaIngresada || fechaIngresada.trim() === "") return;
 
-    // 2. Pedimos el dinero de ese día
     const montoIngresado = prompt(`¿Cuánto fue la ganancia total del día ${fechaIngresada}?`);
-    if (montoIngresado === null) return; // Si cancela, no hacemos nada
+    if (montoIngresado === null) return;
 
     const montoReal = parseFloat(montoIngresado);
     if (isNaN(montoReal) || montoReal < 0) {
         return alert("Por favor, ingresa un número válido sin letras ni símbolos extraños.");
     }
 
-    // 3. Lo guardamos en el historial acumulado
     historicoAcumulado.push({
         id: Date.now(),
-        fecha: fechaIngresada + " (Libreta)", // Le ponemos la etiqueta para que sepas de dónde salió
+        fecha: fechaIngresada + " (Libreta)",
         balanceFinal: montoReal,
         ventasDetalle: ["Registro manual desde libreta física"]
     });
 
-    // 4. Guardamos en memoria, nube y actualizamos pantalla
     guardarEnMemoria();
     actualizarPantalla();
-    
-    // 5. Refrescamos la ventana del historial para que lo veas aparecer de inmediato
     mostrarHistorialCierres(); 
 }
