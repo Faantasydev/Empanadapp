@@ -20,12 +20,11 @@ const db = firebase.database();
 // ========================================================
 let inventario = JSON.parse(localStorage.getItem('empanadas_inventario')) || [];
 let insumos = JSON.parse(localStorage.getItem('empanadas_insumos')) || [];
-let deudores = {}; // Cambiado a objeto para reflejar de forma exacta la estructura de Firebase
 let balance = parseFloat(localStorage.getItem('empanadas_balance')) || 0;
 let historial = JSON.parse(localStorage.getItem('empanadas_historial')) || [];
 let historicoAcumulado = JSON.parse(localStorage.getItem('empanadas_historico_general')) || [];
 let carrito = [];
-let nubeLista = false; // Este es nuestro candado de seguridad
+let nubeLista = false; // Candado de seguridad
 
 actualizarPantalla();
 
@@ -39,7 +38,6 @@ db.ref('empanada_control/').on('value', (snapshot) => {
     if (data) {
         inventario = data.inventario || [];
         insumos = data.insumos || [];
-        deudores = data.deudores || {}; // Sincroniza correctamente los deudores como objeto/mapa
         balance = data.balance !== undefined ? data.balance : 0;
         historial = data.historial || [];
         
@@ -49,10 +47,7 @@ db.ref('empanada_control/').on('value', (snapshot) => {
         }
     }
     
-    // 🔥 ABRIMOS EL CANDADO: Ya tenemos los datos reales de la nube
     nubeLista = true;
-    
-    // Repintamos la pantalla con la verdad absoluta
     actualizarPantalla();
 }, (error) => {
     console.error("Error conectando a Firebase en tiempo real:", error);
@@ -64,13 +59,10 @@ db.ref('empanada_control/').on('value', (snapshot) => {
 // 🔄 FUNCIONES DE GUARDADO Y PANTALLA
 // ========================================================
 function guardarEnMemoria() {
-    // 🔥 Si la nube no ha mandado los datos, BLOQUEAMOS el guardado para no dañar la base de datos
     if (!nubeLista) return;
 
-    // Guardado Local
     localStorage.setItem('empanadas_inventario', JSON.stringify(inventario));
     localStorage.setItem('empanadas_insumos', JSON.stringify(insumos));
-    localStorage.setItem('empanadas_deudores', JSON.stringify(deudores));
     localStorage.setItem('empanadas_balance', balance.toString());
     localStorage.setItem('empanadas_historial', JSON.stringify(historial));
     localStorage.setItem('empanadas_historico_general', JSON.stringify(historicoAcumulado));
@@ -81,11 +73,9 @@ function guardarEnMemoria() {
         nube.innerText = "cloud_upload"; 
     }
 
-    // Guardado en la Nube
     db.ref('empanada_control/').set({
         inventario: inventario,
         insumos: insumos,
-        deudores: deudores,
         balance: balance,
         historial: historial,
         historicoAcumulado: historicoAcumulado
@@ -109,7 +99,6 @@ function guardarEnMemoria() {
 function actualizarPantalla() {
     document.getElementById('balance-total').innerHTML = `$${balance.toLocaleString('es-CO')}`;
     
-    // Cálculo seguro del acumulado total
     let dineroDiasAnteriores = 0;
     if (Array.isArray(historicoAcumulado)) {
         dineroDiasAnteriores = historicoAcumulado.reduce((sum, dia) => sum + (parseFloat(dia.balanceFinal) || 0), 0);
@@ -150,27 +139,6 @@ function actualizarPantalla() {
         document.getElementById('total-carrito').innerText = '$' + totalCarrito.toLocaleString();
     } else {
         divCarrito.style.display = 'none';
-    }
-
-    // Renderizado corregido de deudores usando las llaves (keys) de Firebase
-    const divDeudores = document.getElementById('lista-deudores');
-    if(divDeudores) {
-        const keysDeudores = Object.keys(deudores || {});
-        divDeudores.innerHTML = keysDeudores.length === 0 ? '<p style="color:#757575; font-size:13px;">¡Qué bien! Nadie te debe dinero hoy.</p>' : '';
-        
-        keysDeudores.forEach(key => {
-            const deudor = deudores[key];
-            divDeudores.innerHTML += `
-                <div class="item-fila" style="border-bottom: 1px solid #ffeae8; padding: 8px 0; display: flex; justify-content: space-between; align-items: center;">
-                    <div>
-                        <strong style="color:#37474f;">${deudor.nombre}</strong>
-                        <div style="font-size:12px; color:#c62828; font-weight:bold;">Debe: $${parseFloat(deudor.monto || 0).toLocaleString('es-CO')}</div>
-                    </div>
-                    <button class="btn-material" style="background-color: #26a69a; padding: 6px 10px; width: auto; font-size:11px;" onclick="saldarDeuda('${key}')">
-                        <span class="material-icons" style="font-size:14px;">check_circle</span> Pagó
-                    </button>
-                </div>`;
-        });
     }
 
     const divRecetaSelec = document.getElementById('receta-insumos-seleccion');
@@ -243,67 +211,6 @@ function actualizarPantalla() {
                     <button class="btn-material btn-eliminar" onclick="eliminarInsumo(${ins.id})"><span class="material-icons">delete</span></button>
                 </div>`;
         });
-    }
-}
-
-// ========================================================
-// 🤝 GESTIÓN DE DEUDORES (CON RECARGO DEL 10%)
-// ========================================================
-function agregarDeuda() {
-    const nombreInput = document.getElementById('deuda-cliente');
-    const montoInput = document.getElementById('deuda-monto');
-    
-    if (!nombreInput || !montoInput) return;
-
-    const nombre = nombreInput.value.trim();
-    let montoBase = parseFloat(montoInput.value);
-
-    if (!nombre || isNaN(montoBase) || montoBase <= 0) {
-        alert("Por favor ingresa un nombre válido y un monto mayor a 0.");
-        return;
-    }
-
-    // Se le suma automáticamente el 10% al monto ingresado
-    const montoConRecargo = montoBase * 1.10;
-
-    const dbRef = firebase.database().ref('zampa/deudores');
-
-    dbRef.once('value', (snapshot) => {
-        let deudoresData = snapshot.val() || {};
-        let clienteKey = null;
-        let deudaActual = 0;
-
-        for (let key in deudoresData) {
-            if (deudoresData[key].nombre.trim().toLowerCase() === nombre.toLowerCase()) {
-                clienteKey = key;
-                deudaActual = deudoresData[key].monto;
-                break;
-            }
-        }
-
-        if (clienteKey) {
-            let nuevaDeudaTotal = deudaActual + montoConRecargo;
-            firebase.database().ref('zampa/deudores/' + clienteKey).update({
-                monto: nuevaDeudaTotal
-            });
-        } else {
-            firebase.database().ref('zampa/deudores').push({
-                nombre: nombre,
-                monto: montoConRecargo
-            });
-        }
-
-        nombreInput.value = '';
-        montoInput.value = '';
-    });
-}
-
-function saldarDeuda(key) {
-    if (confirm("¿Confirmar que el cliente ha pagado la totalidad de la deuda para retirarlo de la lista?")) {
-        firebase.database().ref('zampa/deudores/' + key).remove()
-            .catch((error) => {
-                alert("Hubo un error al eliminar el registro: " + error.message);
-            });
     }
 }
 
