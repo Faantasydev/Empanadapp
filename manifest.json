@@ -1,10 +1,10 @@
 {
-  "name": "Control de Empanadas",
-  "short_name": "EmpanadaControl",
+  "name": "Zampa",
+  "short_name": "Zampa",
   "start_url": "index.html",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#2ec4b6",
+  "background_color": "#f0f4f8",
+  "theme_color": "#29b6f6",
   "icons": [
     {
       "src": "./logo.png",
