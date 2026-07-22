@@ -13,39 +13,59 @@ html, body {
     -webkit-text-size-adjust: 100%;
     background-color: #f0f4f8;
     color: #1a237e;
-    padding-bottom: 90px; /* Espacio extra abajo para el dock */
+    padding-bottom: 90px;
 }
 
 button, input, select, textarea {
     touch-action: manipulation;
 }
 
-header {
-    background-color: rgba(2, 136, 209, 0.85);
-    background-image: url('fondo-empanadas.jpg');
-    background-repeat: repeat;
-    background-size: 65px;
+/* =========================================
+   BARRA SUPERIOR (HEADER) FIJA Y CENTRADA
+   ========================================= */
+.header-control {
+    position: fixed;
+    top: 0;
+    left: 50%; /* Centra el header en pantallas grandes */
+    transform: translateX(-50%); /* Ajuste fino del centrado */
+    width: 100%;
+    max-width: 480px; /* Mismo ancho que tu contenedor */
+    z-index: 999;
+    background-color: #29b6f6;
+    padding: 15px 20px;
     color: white;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     text-align: center;
-    padding: 20px 15px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.15);
 }
 
-.header-icon { font-size: 32px; margin-bottom: 5px; }
-header h1 { 
-    font-size: 20px; 
-    font-weight: 600; 
-    text-shadow: 1px 2px 4px rgba(0,0,0,0.5); 
+.header-main {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    position: relative;
 }
 
-header p { 
-    font-size: 12px; 
-    opacity: 0.9; 
-    text-shadow: 1px 1px 2px rgba(0,0,0,0.4); 
+.logo-zampa {
+    height: 85px;
+    object-fit: contain;
+    filter: drop-shadow(2px 2px 3px rgba(0,0,0,0.3));
+    margin: 0 auto;
+}
+
+.header-subtittle {
+    margin: 8px 0 0 0;
+    font-size: 13px;
+    opacity: 0.90;
+    font-weight: 500;
+    letter-spacing: 0.5px;
 }
 
 /* =========================================
-   CONTENEDOR PRINCIPAL (UNIFICADO Y LIMPIO)
+   CONTENEDOR PRINCIPAL
    ========================================= */
 .container {
     max-width: 480px;
@@ -55,6 +75,7 @@ header p {
     z-index: 1;
     overflow: hidden;
     padding-bottom: 90px;
+    padding-top: 150px; /* ⚠️ ESPACIO NECESARIO PARA QUE EL HEADER FIJO NO TAPE EL CONTENIDO */
 }
 
 /* =========================================
@@ -72,7 +93,6 @@ header p {
     display: block;
 }
 
-/* Animaciones fluidas estilo Play Libros */
 .animar-adelante {
     animation: deslizarDerecha 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }
@@ -267,17 +287,12 @@ header p {
 /* =========================================
    ESTADOS DE LA NUBE
    ========================================= */
-.header-control {
-    position: relative;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
 #icono-nube {
     font-size: 24px;
     transition: color 0.3s ease;
     cursor: pointer;
+    position: absolute;
+    right: 0;
 }
 
 .nube-sincronizada { color: #2ec4b6; }
@@ -287,45 +302,4 @@ header p {
 @keyframes parpadeoNube {
     from { opacity: 0.4; }
     to { opacity: 1; }
-}
-
-/* --- NUEVOS ESTILOS PARA LA BARRA SUPERIOR DE ZAMPA --- */
-.header-control {
-    background-color: #29b6f6;
-    padding: 15px 20px;
-    color: white;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.15);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-}
-
-.header-main {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    width: 100%;
-    position: relative;
-}
-
-.logo-zampa {
-    height: 85px;
-    object-fit: contain;
-    filter: drop-shadow(2px 2px 3px rgba(0,0,0,0.3));
-    margin: 0 auto;
-}
-
-.nube-sincronizada {
-    position: absolute;
-    right: 0;
-    font-size: 24px;
-}
-
-.header-subtittle {
-    margin: 8px 0 0 0;
-    font-size: 13px;
-    opacity: 0.90;
-    font-weight: 500;
-    letter-spacing: 0.5px;
 }
