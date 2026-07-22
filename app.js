@@ -1,4 +1,26 @@
 // ========================================================
+// 🎬 ANIMACIÓN DE INICIO (SPLASH SCREEN)
+// ========================================================
+document.addEventListener("DOMContentLoaded", () => {
+    const splashScreen = document.getElementById("splash-screen");
+
+    // Revisamos si ya se reprodujo la animación en esta sesión
+    if (sessionStorage.getItem("zampa_animado")) {
+        if (splashScreen) splashScreen.style.display = "none";
+    } else {
+        // Marcamos que ya se vio y la ocultamos tras 2.5 segundos
+        sessionStorage.setItem("zampa_animado", "true");
+        
+        setTimeout(() => {
+            if (splashScreen) {
+                splashScreen.classList.add("ocultar-splash");
+                setTimeout(() => splashScreen.remove(), 500); // Se borra para no estorbar
+            }
+        }, 2500); 
+    }
+});
+
+// ========================================================
 // ☁️ CONFIGURACIÓN DE FIREBASE EN LA NUBE
 // ========================================================
 const firebaseConfig = {

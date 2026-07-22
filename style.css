@@ -304,3 +304,66 @@ button, input, select, textarea {
     from { opacity: 0.4; }
     to { opacity: 1; }
 }
+
+/* =========================================
+   PANTALLA DE CARGA (SPLASH SCREEN)
+   ========================================= */
+#splash-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #29b6f6; /* El azul de tu barra */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 999999;
+    transition: opacity 0.5s ease, visibility 0.5s ease;
+}
+
+.splash-content {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.logo-animado-container {
+    width: 250px; /* Tamaño del logo en la pantalla de carga */
+    overflow: hidden;
+}
+
+.logo-splash {
+    width: 100%;
+    /* Esto vuelve el logo blanco para que contraste con el fondo azul */
+    filter: brightness(0) invert(1); 
+    
+    /* Efecto que oculta la imagen y la revela de izquierda a derecha */
+    clip-path: polygon(0 0, 0 0, 0 100%, 0% 100%);
+    animation: escribirLogo 1.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* Animación de "escritura" */
+@keyframes escribirLogo {
+    0% { clip-path: polygon(0 0, 0 0, 0 100%, 0% 100%); }
+    100% { clip-path: polygon(0 0, 100% 0, 100% 100%, 0% 100%); }
+}
+
+.splash-sub {
+    margin-top: 15px;
+    font-size: 14px;
+    color: white;
+    letter-spacing: 1px;
+    opacity: 0;
+    animation: aparecerTexto 0.8s ease 1.2s forwards;
+}
+
+@keyframes aparecerTexto {
+    to { opacity: 0.95; }
+}
+
+.ocultar-splash {
+    opacity: 0;
+    visibility: hidden;
+}
