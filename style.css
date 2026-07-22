@@ -26,13 +26,13 @@ button, input, select, textarea {
 .header-control {
     position: fixed;
     top: 0;
-    left: 50%; /* Centra el header en pantallas grandes */
-    transform: translateX(-50%); /* Ajuste fino del centrado */
+    left: 50%;
+    transform: translateX(-50%);
     width: 100%;
-    max-width: 480px; /* Mismo ancho que tu contenedor */
+    max-width: 480px;
     z-index: 999;
     background-color: #29b6f6;
-    padding: 15px 20px;
+    padding: 8px 15px; /* <-- Relleno reducido */
     color: white;
     box-shadow: 0 2px 5px rgba(0,0,0,0.15);
     display: flex;
@@ -50,15 +50,15 @@ button, input, select, textarea {
 }
 
 .logo-zampa {
-    height: 85px;
+    height: 50px; /* <-- Altura del logo reducida (antes 85px) */
     object-fit: contain;
     filter: drop-shadow(2px 2px 3px rgba(0,0,0,0.3));
     margin: 0 auto;
 }
 
 .header-subtittle {
-    margin: 8px 0 0 0;
-    font-size: 13px;
+    margin: 4px 0 0 0; /* <-- Menor separación arriba */
+    font-size: 11px;   /* <-- Texto un poco más sutil */
     opacity: 0.90;
     font-weight: 500;
     letter-spacing: 0.5px;
@@ -75,8 +75,9 @@ button, input, select, textarea {
     z-index: 1;
     overflow: hidden;
     padding-bottom: 90px;
-    padding-top: 150px; /* ⚠️ ESPACIO NECESARIO PARA QUE EL HEADER FIJO NO TAPE EL CONTENIDO */
+    padding-top: 95px; /* <-- Reducido para coincidir con la nueva barra delgada (antes 150px) */
 }
+
 
 /* =========================================
    ESTÉTICA DE LIBRETA Y ANIMACIONES
