@@ -244,9 +244,7 @@ function actualizarPantalla() {
     }
 }
 
-// ========================================================
-// 🧍 CONTROL DE FIADOS (DEUDORES)
-// ========================================================
+// --- NUEVA LÓGICA DE DEUDORES CON RECARGO DEL 10% ---
 function agregarDeuda() {
     const nombreInput = document.getElementById('deuda-cliente');
     const montoInput = document.getElementById('deuda-monto');
@@ -261,19 +259,16 @@ function agregarDeuda() {
         return;
     }
 
-    // Se le suma el 10% al monto ingresado como pediste
+    // Se le suma automáticamente el 10% al monto ingresado
     const montoConRecargo = montoBase * 1.10;
 
-    // Referencia a tu base de datos o arreglo local de deudores
-    // (Asegúrate de adaptarlo según cómo guardes el objeto del cliente)
-    const dbRef = firebase.database().ref('zampa/deudores'); // Ejemplo con Firebase
+    const dbRef = firebase.database().ref('zampa/deudores');
 
     dbRef.once('value', (snapshot) => {
         let deudores = snapshot.val() || {};
         let clienteKey = null;
         let deudaActual = 0;
 
-        // Buscar si el cliente ya existe para sumarle la nueva deuda con su recargo
         for (let key in deudores) {
             if (deudores[key].nombre.toLowerCase() === nombre.toLowerCase()) {
                 clienteKey = key;
@@ -283,28 +278,33 @@ function agregarDeuda() {
         }
 
         if (clienteKey) {
-            // Si ya existe, acumulamos la nueva deuda con recargo a la anterior
             let nuevaDeudaTotal = deudaActual + montoConRecargo;
             firebase.database().ref('zampa/deudores/' + clienteKey).update({
                 monto: nuevaDeudaTotal
             });
         } else {
-            // Si es un cliente nuevo, lo creamos con su monto y el 10% incluido
             firebase.database().ref('zampa/deudores').push({
                 nombre: nombre,
                 monto: montoConRecargo
             });
         }
 
-        // Limpiar campos
         nombreInput.value = '';
         montoInput.value = '';
         
-        // Recargar la lista visual de deudores
         if (typeof cargarDeudores === 'function') {
             cargarDeudores();
         }
     });
+}
+
+function saldarDeuda(key) {
+    if (confirm("¿Confirmar que el cliente ha pagado la totalidad de la deuda para retirarlo de la lista?")) {
+        firebase.database().ref('zampa/deudores/' + key).remove()
+            .then(() => {
+                if (typeof cargarDeudores === 'function') cargarDeudores();
+            });
+    }
 }
 
 
