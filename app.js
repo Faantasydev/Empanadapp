@@ -559,34 +559,28 @@ function agregarDiaDeLibreta() {
 // ========================================================
 // 💰 FUNCIÓN PARA SUMAR MANUALMENTE AL BALANCE
 // ========================================================
-function sumarAlBalance() {
-    // 1. Mostramos una ventana pidiendo el monto
+function sumarAlBalance(event) {
+    // 1. Evitamos que el toque se propague a los elementos de atrás (como el historial)
+    if (event) {
+        event.stopPropagation();
+    }
+
+    // 2. Mostramos la ventana pidiendo el monto
     let cantidadIngresada = prompt("¿Cuánto deseas sumar al balance de hoy?");
 
-    // 2. Verificamos que el usuario no haya cancelado y que haya escrito algo
+    // 3. Verificamos que no se haya cancelado
     if (cantidadIngresada !== null && cantidadIngresada.trim() !== "") {
         
-        // Limpiamos lo que escribió para dejar solo los números (por si pone letras o signos)
         let montoASumar = parseInt(cantidadIngresada.replace(/\D/g, ''));
 
-        // 3. Validamos que sea un número real y mayor a cero
         if (!isNaN(montoASumar) && montoASumar > 0) {
-            
-            // Seleccionamos el texto del balance actual
             let elementoBalance = document.getElementById("balance-total");
-            
-            // Le quitamos el signo $ y los puntos al balance actual para poder hacer la suma matemática
             let textoActual = elementoBalance.innerText.replace(/\D/g, '');
             let balanceActual = parseInt(textoActual) || 0;
 
-            // 4. Hacemos la suma
             let nuevoBalance = balanceActual + montoASumar;
 
-            // 5. Actualizamos el número en la pantalla con el formato correcto de pesos
             elementoBalance.innerText = "$" + nuevoBalance.toLocaleString("es-CO");
-            
-            // (Opcional) Si estás guardando el balance en localStorage, actualízalo aquí:
-            // localStorage.setItem("balance_ventas_hoy", nuevoBalance);
             
         } else {
             alert("⚠️ Por favor, ingresa una cantidad válida mayor a 0.");
