@@ -33,7 +33,7 @@
         <div id="pantalla-ventas" class="pestana-contenido activa">
             <div class="card balance-card" onclick="mostrarHistorialCierres()" style="cursor: pointer;">
                 <span class="balance-title">Balance de Ventas (Hoy)</span>
-                <div id="balance-total">$0</div>
+                <div id="balance-total" style="cursor: pointer;" onclick="sumarAlBalance()">$0</div>
 				<div id="saldo-gran-total" style="font-size: 14px; opacity: 0.85; margin-top: 4px; font-weight: normal;">Acumulado Total: $0</div>
                 <div style="margin-top: 10px; display: flex; justify-content: center; font-size: 12px;">
                     <span style="cursor:pointer; display:flex; align-items:center; gap:3px; opacity:0.9;" onclick="event.stopPropagation(); cerrarCaja();"><span class="material-icons" style="font-size:14px;">autorenew</span> Cerrar Caja</span>
