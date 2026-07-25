@@ -456,6 +456,7 @@ function mostrarHistorialCierres() {
 function editarAcumuladoTotal(event) {
     if (event) {
         event.stopPropagation();
+        event.preventDefault();
     }
 
     let dineroDiasAnteriores = historicoAcumulado.reduce((sum, dia) => sum + (parseFloat(dia.balanceFinal) || 0), 0);
@@ -557,12 +558,13 @@ function agregarDiaDeLibreta() {
 }
 
 // ========================================================
-// 💰 FUNCIÓN PARA SUMAR MANUALMENTE AL BALANCE
+// 💰 FUNCIÓN PARA SUMAR MANUALMENTE AL BALANCE (CORREGIDA)
 // ========================================================
 function sumarAlBalance(event) {
-    // 1. Evitamos que el toque se propague a los elementos de atrás (como el historial)
+    // 1. Bloqueamos cualquier toque accidental hacia la tarjeta de atrás
     if (event) {
         event.stopPropagation();
+        event.preventDefault();
     }
 
     // 2. Mostramos la ventana pidiendo el monto
@@ -574,13 +576,13 @@ function sumarAlBalance(event) {
         let montoASumar = parseInt(cantidadIngresada.replace(/\D/g, ''));
 
         if (!isNaN(montoASumar) && montoASumar > 0) {
-            let elementoBalance = document.getElementById("balance-total");
-            let textoActual = elementoBalance.innerText.replace(/\D/g, '');
-            let balanceActual = parseInt(textoActual) || 0;
+            
+            // 🔥 CORRECCIÓN CLAVE: Sumamos el dinero a la variable global 'balance'
+            balance += montoASumar;
 
-            let nuevoBalance = balanceActual + montoASumar;
-
-            elementoBalance.innerText = "$" + nuevoBalance.toLocaleString("es-CO");
+            // 🔥 CORRECCIÓN CLAVE: Guardamos en Firebase, memoria local y actualizamos la pantalla
+            guardarEnMemoria();
+            actualizarPantalla();
             
         } else {
             alert("⚠️ Por favor, ingresa una cantidad válida mayor a 0.");
