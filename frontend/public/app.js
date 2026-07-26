@@ -42,6 +42,7 @@ let balance = parseFloat(localStorage.getItem('empanadas_balance')) || 0;
 let historial = JSON.parse(localStorage.getItem('empanadas_historial')) || [];
 let historicoAcumulado = JSON.parse(localStorage.getItem('empanadas_historico_general')) || [];
 let deudores = JSON.parse(localStorage.getItem('zampa_deudores')) || [];
+let gastos = JSON.parse(localStorage.getItem('zampa_gastos')) || [];
 let carrito = [];
 let nubeLista = false;
 let chartProductos = null; // instancia Chart.js
@@ -76,6 +77,7 @@ db.ref('empanada_control/').on('value', (snapshot) => {
         if (data.balance !== undefined) balance = data.balance;
         if (data.historial && Array.isArray(data.historial)) historial = data.historial;
         if (data.deudores && Array.isArray(data.deudores)) deudores = data.deudores;
+        if (data.gastos && Array.isArray(data.gastos)) gastos = data.gastos;
 
         if (data.historicoAcumulado && Array.isArray(data.historicoAcumulado)) {
             historicoAcumulado = data.historicoAcumulado;
@@ -101,6 +103,7 @@ function guardarEnMemoria() {
     localStorage.setItem('empanadas_historial', JSON.stringify(historial));
     localStorage.setItem('empanadas_historico_general', JSON.stringify(historicoAcumulado));
     localStorage.setItem('zampa_deudores', JSON.stringify(deudores));
+    localStorage.setItem('zampa_gastos', JSON.stringify(gastos));
 
     const nube = document.getElementById('icono-nube');
     if (nube) {
@@ -353,6 +356,13 @@ function actualizarPantalla() {
 
     // ------- Deudores -------
     renderDeudores();
+
+    // ------- Gastos e Inversiones (solo admin ve el accordion) -------
+    renderGastos();
+    const accordionGastos = document.querySelector('.accordion-section');
+    if (accordionGastos) {
+        accordionGastos.style.display = (rolActual === 'admin') ? 'block' : 'none';
+    }
 }
 
 // ========================================================
@@ -1019,6 +1029,12 @@ function renderDeudores() {
     listaEl.innerHTML = deudores.map(d => {
         const fechaTxt = d.fechaCreacion || '—';
         const veces = (d.movimientos && d.movimientos.length) || 1;
+        const esAdmin = (rolActual === 'admin');
+        const botonBorrar = esAdmin
+            ? `<button class="icon-btn danger" onclick="borrarDeudorAdmin(${d.id})" title="Borrar (admin)" data-testid="btn-borrar-deudor-${d.id}">
+                    <span class="material-icons-round">delete</span>
+               </button>`
+            : '';
         return `
         <div class="deudor-card" data-testid="deudor-card-${d.id}">
             <div class="deudor-header">
@@ -1029,7 +1045,10 @@ function renderDeudores() {
                         <span>Desde ${esc(fechaTxt)} · ${veces} ${veces === 1 ? 'movimiento' : 'movimientos'}</span>
                     </div>
                 </div>
-                <div class="deudor-monto-total" data-testid="deudor-monto-${d.id}">${fmtMoney(d.monto)}</div>
+                <div style="display:flex; flex-direction:column; align-items:flex-end; gap:6px;">
+                    <div class="deudor-monto-total" data-testid="deudor-monto-${d.id}">${fmtMoney(d.monto)}</div>
+                    ${botonBorrar}
+                </div>
             </div>
             <div class="deudor-actions">
                 <button class="btn-sumar-deuda" onclick="sumarDeudaAExistente(${d.id})" data-testid="btn-sumar-${d.id}">
@@ -1115,6 +1134,98 @@ function pagarDeuda(id) {
     guardarEnMemoria();
     actualizarPantalla();
     mostrarToast(`✅ ${d.nombre} pagó ${fmtMoney(d.monto)}. Deuda liquidada.`, 'éxito', 4000);
+}
+
+function borrarDeudorAdmin(id) {
+    if (rolActual !== 'admin') return alert("Solo el administrador puede borrar deudas sin pagar.");
+    const d = deudores.find(x => x.id === id);
+    if (!d) return;
+
+    if (!confirm(`⚠️ Modo Admin: borrar la deuda de "${d.nombre}" (${fmtMoney(d.monto)}) sin registrarla como pagada.\n\n¿Confirmas?`)) return;
+
+    deudores = deudores.filter(x => x.id !== id);
+    guardarEnMemoria();
+    actualizarPantalla();
+    mostrarToast(`🗑 Deuda de ${d.nombre} borrada por admin`, 'alerta', 3500);
+}
+
+// ========================================================
+// 💼 GASTOS E INVERSIONES (Accordion en Inventario, solo admin)
+// ========================================================
+function toggleAccordionGastos() {
+    vibrar(15);
+    const section = document.querySelector('.accordion-section');
+    if (!section) return;
+    section.classList.toggle('open');
+}
+
+function renderGastos() {
+    const listaEl = document.getElementById('lista-gastos');
+    const summaryEl = document.getElementById('gastos-summary');
+    if (!listaEl) return;
+
+    const totalGastos = gastos.reduce((s, g) => s + (parseFloat(g.costo) || 0), 0);
+
+    if (summaryEl) {
+        summaryEl.textContent = gastos.length === 0
+            ? 'Ítems que no se venden (equipos, consumibles...)'
+            : `${gastos.length} ${gastos.length === 1 ? 'ítem' : 'ítems'} · Total invertido ${fmtMoney(totalGastos)}`;
+    }
+
+    if (gastos.length === 0) {
+        listaEl.innerHTML = `
+            <div class="empty-state" data-testid="empty-gastos">
+                <span class="material-icons-round">savings</span>
+                Sin gastos registrados.
+            </div>`;
+        return;
+    }
+
+    listaEl.innerHTML = gastos.map(g => `
+        <div class="gasto-card" data-testid="gasto-card-${g.id}">
+            <div class="product-info">
+                <span class="product-name">${esc(g.nombre)}</span>
+                <span class="gasto-fecha">${esc(g.fecha || '')}</span>
+            </div>
+            <span class="gasto-monto" data-testid="gasto-monto-${g.id}">${fmtMoney(g.costo)}</span>
+            <button class="icon-btn danger" onclick="eliminarGasto(${g.id})" title="Eliminar" data-testid="btn-eliminar-gasto-${g.id}">
+                <span class="material-icons-round">delete</span>
+            </button>
+        </div>
+    `).join('');
+}
+
+function agregarGasto() {
+    if (rolActual !== 'admin') return alert("Solo administrador puede registrar gastos e inversiones.");
+
+    const nombreInp = document.getElementById('gasto-nombre');
+    const costoInp = document.getElementById('gasto-costo');
+    const nombre = (nombreInp.value || '').trim();
+    const costo = parseFloat(costoInp.value);
+
+    if (!nombre || isNaN(costo) || costo <= 0) return alert("Ingresa nombre y costo válido.");
+
+    gastos.push({
+        id: Date.now(),
+        nombre,
+        costo,
+        fecha: new Date().toLocaleDateString('es-CO') + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    });
+
+    guardarEnMemoria();
+    actualizarPantalla();
+    nombreInp.value = ''; costoInp.value = '';
+    mostrarToast(`✔ Gasto "${nombre}" registrado: ${fmtMoney(costo)}`, 'éxito', 3500);
+}
+
+function eliminarGasto(id) {
+    const g = gastos.find(x => x.id === id);
+    if (!g) return;
+    if (!confirm(`¿Eliminar "${g.nombre}" (${fmtMoney(g.costo)})?`)) return;
+    gastos = gastos.filter(x => x.id !== id);
+    guardarEnMemoria();
+    actualizarPantalla();
+    mostrarToast(`🗑 Gasto "${g.nombre}" eliminado`, 'info', 2500);
 }
 
 // ========================================================

@@ -1093,6 +1093,58 @@ button, input, select, textarea {
     letter-spacing: 0.1px;
 }
 
+/* ============ 13.b DOCK VENTAS HIGHLIGHT (Centered gold) ============ */
+.dock-inferior { overflow: visible; } /* allow highlight to pop above dock */
+
+.dock-item.dock-ventas-highlight {
+    background: linear-gradient(180deg, var(--gold) 0%, var(--gold-strong) 100%);
+    color: #0A0A0B !important;
+    width: 66px;
+    max-width: 66px;
+    min-width: 66px;
+    height: 66px;
+    flex: 0 0 66px;
+    border-radius: 22px;
+    transform: translateY(-14px);
+    box-shadow: 0 12px 26px -6px var(--gold-glow),
+                0 0 0 0.5px rgba(255,255,255,0.15) inset,
+                0 0 0 4px var(--glass-dock);
+    padding: 4px;
+    z-index: 3;
+    align-self: center;
+    transition: transform 0.2s var(--ease-spring), box-shadow 0.25s ease;
+}
+
+.dock-item.dock-ventas-highlight .material-icons-round {
+    color: #0A0A0B !important;
+    font-size: 26px;
+    transform: none !important;
+}
+
+.dock-item.dock-ventas-highlight .dock-label {
+    color: #0A0A0B !important;
+    font-weight: 700;
+    font-size: 9.5px;
+    letter-spacing: 0.3px;
+}
+
+.dock-item.dock-ventas-highlight:active {
+    transform: translateY(-14px) scale(0.92) !important;
+    background: linear-gradient(180deg, var(--gold) 0%, var(--gold-strong) 100%);
+}
+
+.dock-item.dock-ventas-highlight.activo {
+    background: linear-gradient(180deg, var(--gold) 0%, var(--gold-strong) 100%);
+    box-shadow: 0 16px 32px -6px var(--gold-glow),
+                0 0 0 0.5px rgba(255,255,255,0.2) inset,
+                0 0 0 4px var(--glass-dock);
+}
+
+.dock-item.dock-ventas-highlight.activo .material-icons-round {
+    color: #0A0A0B !important;
+    transform: scale(1.05) !important;
+}
+
 /* ============ 14. CLOUD ICON STATES ============ */
 #icono-nube { transition: color 0.3s ease; font-size: 20px; }
 
@@ -1893,3 +1945,125 @@ button, .btn-primary, .dock-item, .product-card {
     margin: 0 auto 4px;
 }
 .chart-empty p { line-height: 1.4; }
+
+/* ============ 23. ACCORDION (Gastos e Inversiones) ============ */
+.accordion-section {
+    background: var(--bg-elev);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-card);
+    border: 0.5px solid var(--glass-border);
+    margin-top: 22px;
+    overflow: hidden;
+}
+
+.accordion-toggle {
+    width: 100%;
+    background: transparent;
+    border: none;
+    padding: 16px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    cursor: pointer;
+    text-align: left;
+    font-family: inherit;
+    color: var(--text-main);
+    min-height: 62px;
+    transition: background 0.15s ease;
+}
+
+.accordion-toggle:active { background: var(--bg-input); }
+
+.accordion-toggle-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    min-width: 0;
+}
+
+.accordion-toggle-left > .material-icons-round {
+    font-size: 22px;
+    color: var(--gold);
+    background: var(--gold-soft);
+    padding: 9px;
+    border-radius: var(--radius-md);
+    flex-shrink: 0;
+}
+
+.accordion-title {
+    display: block;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-main);
+    letter-spacing: -0.2px;
+    line-height: 1.2;
+}
+
+.accordion-subtitle {
+    display: block;
+    font-size: 11.5px;
+    color: var(--text-muted);
+    font-weight: 500;
+    margin-top: 3px;
+    letter-spacing: 0.1px;
+}
+
+.accordion-arrow {
+    color: var(--text-muted);
+    font-size: 24px;
+    flex-shrink: 0;
+    transition: transform 0.3s var(--ease-ios);
+}
+
+.accordion-section.open .accordion-arrow {
+    transform: rotate(180deg);
+    color: var(--gold);
+}
+
+.accordion-content {
+    max-height: 0;
+    overflow: hidden;
+    padding: 0 14px;
+    transition: max-height 0.4s var(--ease-ios), padding 0.3s ease;
+    background: var(--bg-elev-2);
+}
+
+.accordion-section.open .accordion-content {
+    max-height: 4000px;
+    padding: 0 14px 14px;
+}
+
+/* Gasto item card (variante del product-card) */
+.gasto-card {
+    background: var(--bg-elev);
+    border-radius: var(--radius-xl);
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    box-shadow: var(--shadow-card);
+    border: 0.5px solid var(--glass-border);
+    border-left: 3px solid var(--warning);
+}
+
+.gasto-card .product-info { flex: 1; }
+.gasto-card .product-name { margin-bottom: 4px; }
+.gasto-card .gasto-fecha {
+    font-size: 11px;
+    color: var(--text-muted);
+    letter-spacing: 0.3px;
+    display: block;
+    margin-top: 2px;
+}
+
+.gasto-card .gasto-monto {
+    font-size: 17px;
+    font-weight: 800;
+    color: var(--warning);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.3px;
+    margin-right: 4px;
+}

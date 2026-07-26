@@ -147,6 +147,41 @@
                 <span class="section-sub">Márgenes de ganancia</span>
             </div>
             <div id="lista-inventario-completo" class="product-grid" data-testid="lista-inventario"></div>
+
+            <!-- ============ GASTOS E INVERSIONES (Accordion desplegable) ============ -->
+            <div class="accordion-section" data-testid="accordion-gastos">
+                <button type="button" class="accordion-toggle" onclick="toggleAccordionGastos()" data-testid="btn-toggle-gastos">
+                    <span class="accordion-toggle-left">
+                        <span class="material-icons-round">savings</span>
+                        <span>
+                            <span class="accordion-title">Gastos e Inversiones</span>
+                            <span class="accordion-subtitle" id="gastos-summary">Ítems que no se venden (equipos, consumibles...)</span>
+                        </span>
+                    </span>
+                    <span class="material-icons-round accordion-arrow" id="accordion-arrow">expand_more</span>
+                </button>
+
+                <div class="accordion-content" id="accordion-content-gastos">
+                    <div class="card" style="margin-top:12px;">
+                        <h3 class="card-inline-title">
+                            <span class="material-icons-round">add_shopping_cart</span> Agregar gasto/inversión
+                        </h3>
+                        <div class="formulario">
+                            <div class="grupo-input">
+                                <input type="text" id="gasto-nombre" placeholder="Ej: Calentador, Servilletas" data-testid="input-gasto-nombre">
+                            </div>
+                            <div class="grupo-input">
+                                <input type="number" id="gasto-costo" placeholder="¿Cuánto costó? ($)" data-testid="input-gasto-costo">
+                            </div>
+                            <button class="btn-primary btn-secondary-color" onclick="agregarGasto()" data-testid="btn-guardar-gasto">
+                                <span class="material-icons-round">add</span> Registrar Gasto
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="lista-gastos" class="product-grid" data-testid="lista-gastos" style="margin-top:12px;"></div>
+                </div>
+            </div>
         </section>
 
         <!-- ============ PESTAÑA INSUMOS ============ -->
@@ -240,11 +275,6 @@
 
     <!-- ==================== DOCK INFERIOR iOS ==================== -->
     <nav class="dock-inferior" data-testid="dock">
-        <button class="dock-item activo" onclick="cambiarPestaña('pantalla-ventas', this)" data-testid="dock-ventas">
-            <span class="dock-indicator"></span>
-            <span class="material-icons-round">point_of_sale</span>
-            <span class="dock-label">Ventas</span>
-        </button>
         <button id="dock-inventario" class="dock-item" onclick="cambiarPestaña('pantalla-inventario', this)" data-testid="dock-inventario">
             <span class="dock-indicator"></span>
             <span class="material-icons-round">inventory_2</span>
@@ -254,6 +284,10 @@
             <span class="dock-indicator"></span>
             <span class="material-icons-round">layers</span>
             <span class="dock-label">Insumos</span>
+        </button>
+        <button class="dock-item dock-ventas-highlight activo" onclick="cambiarPestaña('pantalla-ventas', this)" data-testid="dock-ventas">
+            <span class="material-icons-round">point_of_sale</span>
+            <span class="dock-label">Ventas</span>
         </button>
         <button class="dock-item" onclick="cambiarPestaña('pantalla-deudores', this)" data-testid="dock-deudores">
             <span class="dock-indicator"></span>
