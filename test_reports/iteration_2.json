@@ -1,0 +1,33 @@
+{
+  "summary": "Comprehensive frontend testing of Zampa POS Material Design update. VERIFIED: Sky-blue Material theme (--primary #03A9F4, balance-card gradient linear-gradient(140deg,#03A9F4→#0288D1→#01579B), Ventas pill highlight color, container max-width 1320px on 1440 viewport, product-grid 2-column at 332px each, dock still centered at bottom), physical keyboard PIN input on desktop works flawlessly (0-9 fill dots → auto-submit at 4th digit changes localStorage.zampa_rol to 'admin'; Backspace removes a dot; Escape closes modal; wrong PIN triggers .shake class on pin-dots), pin-hint-kb text visible with correct wording, PIN modal centered on desktop (left=right=510px), cart flow OK ($3.500 shown after AGREGAR). CRITICAL BUG: Merge of duplicate expenses (gastos) does NOT work in practice — after adding 'Aceite $5000' then 'ACEITE $3000' (same normalized name), only ONE item remains at $3.000 (the last add) instead of merged $8.000 or two separate items. RCA identified below.",
+  "backend_issues": { "critical": [], "minor": [] },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {
+        "flow": "Merge gastos duplicados (Firebase sync overwrite)",
+        "issue": "guardarEnMemoria() at /app/frontend/public/app.js line 118-119 calls db.ref('empanada_control/').set({inventario, insumos, balance, historial, historicoAcumulado, deudores}) — the `gastos` field is MISSING from the payload. Since Firebase .set() replaces the entire node, remote `gastos` is wiped on every save. Additionally, the snapshot listener at line 73-88 fires after every write; because gastos is not persisted server-side, the local state becomes inconsistent between the first and second add — the merge branch never finds the existing item on the 2nd add and the first $5.000 gasto disappears from the UI, leaving only the new $3.000 item. Reproduction: dock-inventario → open Gastos accordion → add 'Aceite' $5000 (see 1 item $5.000 briefly) → add 'ACEITE  ' $3000 → result shows only 1 item ($3.000), no '2× agregado' badge, toast says 'registrado' (not 'Sumado'). Expected: 1 item $8.000 with badge '2× agregado' and toast 'Sumado a Aceite: +$3.000 = $8.000'.",
+        "affected_selectors": ["[data-testid=btn-guardar-gasto]", "[data-testid^=veces-]", "[data-testid^=gasto-monto-]"]
+      }
+    ],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [
+    "FIX MERGE BUG (HIGH): In /app/frontend/public/app.js line 118, add `gastos` to the Firebase set payload: `db.ref('empanada_control/').set({ inventario, insumos, balance, historial, historicoAcumulado, deudores, gastos }, ...)`. Also review the snapshot listener at line 82 — consider using `else gastos = gastos` (no-op) or persisting gastos consistently so the local state does not race with remote snapshots. After fix, re-test the merge flow to confirm badge '2× agregado' appears and toast reads 'Sumado a…'."
+  ],
+  "critical_code_review_comments": [
+    "Firebase .set() at line 118 in app.js REPLACES the entire node — omitting `gastos` from the payload will wipe any existing gastos in Firebase remote and, combined with the snapshot listener, causes the visible race that makes merge unreliable.",
+    "`gastos` is declared with `let` at module top (line 45); it is not exposed as `window.gastos`, making runtime debugging harder. Consider exposing via `window.__zampa = { get gastos(){return gastos} }` for testability.",
+    "File /app/frontend/public/app.js is 1613 lines — well above the 700-line guideline. Consider splitting into modules (ventas, gastos, deudores, pin, firebase-sync).",
+    "The `if (data.gastos && Array.isArray(data.gastos)) gastos = data.gastos;` guard prevents overwriting locally but is asymmetric with other fields (inventario/insumos/etc). This inconsistency is the source of subtle state bugs when combined with the missing gastos in set()."
+  ],
+  "updated_files": [],
+  "success_rate": { "backend": "N/A", "frontend": "85%" },
+  "test_credentials": "PIN Admin 1234 · localStorage.zampa_rol=admin|vendedor · localStorage.zampa_animado=true skips splash",
+  "seed_data_creation": "Used timestamped names (Aceite-t{ts}, Servilletas-t{ts}, AceiteX{ts}) to avoid Firebase preloading collisions.",
+  "retest_needed": true,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "The MERGE bug is caused by Firebase `.set()` in guardarEnMemoria (line 118) omitting `gastos`. After E1 patches this, re-run the merge test: dock-inventario → btn-toggle-gastos → add 'Aceite' $5000 (wait 1.5s for Firebase) → add 'ACEITE  ' $3000 → verify: (a) [data-testid=gasto-monto-*] shows $8.000, (b) [data-testid=veces-*] shows '2× agregado', (c) toast contains 'Sumado a'. All OTHER features verified working: theme (Material sky-blue #03A9F4), desktop responsive (container 1320px max, product-grid 2-col), chart-gastos-wrap hidden with 1 gasto and visible doughnut with legend/percentages when ≥2, physical keyboard PIN (0-9/Backspace/Escape) with pin-hint-kb visible, shake on wrong PIN, PIN modal centered on desktop, cart flow OK. Dark mode NOT tested (would require emulating prefers-color-scheme dark). Regression on deudores/chart-deudores/chart-productos NOT re-tested this iteration.",
+  "rca of the issue": "ROOT CAUSE: /app/frontend/public/app.js line 118 — `db.ref('empanada_control/').set({inventario, insumos, balance, historial, historicoAcumulado, deudores}, …)` omits the `gastos` field. Because Firebase .set() replaces the whole node, and the snapshot listener at lines 73-88 immediately re-hydrates local state on every write, the local `gastos` array becomes inconsistent between successive adds: the first add pushes Aceite $5000 to local `gastos`, but the subsequent Firebase round-trip (with no gastos in remote) plus the actualizarPantalla() re-render can produce a state where the second call to agregarGasto() no longer sees the first item to merge against. Result: gastos.find() returns undefined → else-branch creates a new item with the second name, and the first item is lost from the UI. FIX: add `gastos` to the set() payload so Firebase persists it, matching all other collections. Reproduction steps documented in action_items."
+}

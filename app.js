@@ -47,6 +47,7 @@ let carrito = [];
 let nubeLista = false;
 let chartProductos = null; // instancia Chart.js
 let chartDeudores = null;
+let chartGastos = null;
 
 // Utilidad: formatea número a moneda COP corta ($1.234)
 function fmtMoney(n) {
@@ -1017,6 +1018,23 @@ function pinBorrar() {
     renderPinDots();
 }
 
+// Teclado físico para PIN (útil en modo ordenador)
+document.addEventListener('keydown', function(e) {
+    const modal = document.getElementById('modal-pin');
+    if (!modal || getComputedStyle(modal).display === 'none') return;
+
+    if (e.key >= '0' && e.key <= '9') {
+        e.preventDefault();
+        pinKeyPress(parseInt(e.key, 10));
+    } else if (e.key === 'Backspace') {
+        e.preventDefault();
+        pinBorrar();
+    } else if (e.key === 'Escape') {
+        e.preventDefault();
+        cerrarModalPin();
+    }
+});
+
 // ========================================================
 // 💳 DEUDORES / FIADOS (Solo sumar, solo pagar para eliminar)
 // ========================================================
@@ -1270,6 +1288,9 @@ function renderGastos() {
             : `${gastos.length} ${gastos.length === 1 ? 'ítem' : 'ítems'} · Total invertido ${fmtMoney(totalGastos)}`;
     }
 
+    // Chart gastos
+    renderChartGastos();
+
     if (gastos.length === 0) {
         listaEl.innerHTML = `
             <div class="empty-state" data-testid="empty-gastos">
@@ -1279,18 +1300,24 @@ function renderGastos() {
         return;
     }
 
-    listaEl.innerHTML = gastos.map(g => `
+    listaEl.innerHTML = gastos.map(g => {
+        const veces = (g.movimientos && g.movimientos.length) || 1;
+        const badgeVeces = veces > 1
+            ? `<span class="gasto-veces" data-testid="veces-${g.id}">${veces}× agregado</span>`
+            : '';
+        return `
         <div class="gasto-card" data-testid="gasto-card-${g.id}">
             <div class="product-info">
                 <span class="product-name">${esc(g.nombre)}</span>
-                <span class="gasto-fecha">${esc(g.fecha || '')}</span>
+                <span class="gasto-fecha">Última: ${esc(g.fecha || '')}</span>
+                ${badgeVeces}
             </div>
             <span class="gasto-monto" data-testid="gasto-monto-${g.id}">${fmtMoney(g.costo)}</span>
             <button class="icon-btn danger" onclick="eliminarGasto(${g.id})" title="Eliminar" data-testid="btn-eliminar-gasto-${g.id}">
                 <span class="material-icons-round">delete</span>
             </button>
-        </div>
-    `).join('');
+        </div>`;
+    }).join('');
 }
 
 function agregarGasto() {
@@ -1298,22 +1325,46 @@ function agregarGasto() {
 
     const nombreInp = document.getElementById('gasto-nombre');
     const costoInp = document.getElementById('gasto-costo');
-    const nombre = (nombreInp.value || '').trim();
+    const nombreRaw = (nombreInp.value || '').trim();
     const costo = parseFloat(costoInp.value);
 
-    if (!nombre || isNaN(costo) || costo <= 0) return alert("Ingresa nombre y costo válido.");
+    if (!nombreRaw || isNaN(costo) || costo <= 0) return alert("Ingresa nombre y costo válido.");
 
-    gastos.push({
-        id: Date.now(),
-        nombre,
-        costo,
-        fecha: new Date().toLocaleDateString('es-CO') + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    const ahora = new Date().toLocaleDateString('es-CO') + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    // Normalizar: minúsculas + collapse whitespace para detectar duplicados
+    const nombreKey = nombreRaw.toLowerCase().replace(/\s+/g, ' ').trim();
+
+    // Buscar si ya existe un gasto con el mismo nombre normalizado
+    const existente = gastos.find(g => {
+        const k = (g.nombre || '').toLowerCase().replace(/\s+/g, ' ').trim();
+        return k === nombreKey;
     });
+
+    if (existente) {
+        // MERGE: sumar costo, actualizar fecha, guardar movimiento
+        const previo = parseFloat(existente.costo) || 0;
+        existente.costo = previo + costo;
+        existente.fecha = ahora;
+        if (!Array.isArray(existente.movimientos)) {
+            existente.movimientos = [{ fecha: existente.fechaCreacion || ahora, costo: previo }];
+        }
+        existente.movimientos.push({ fecha: ahora, costo });
+        mostrarToast(`✔ Sumado a "${existente.nombre}": +${fmtMoney(costo)} = ${fmtMoney(existente.costo)}`, 'éxito', 4000);
+    } else {
+        gastos.push({
+            id: Date.now(),
+            nombre: nombreRaw,
+            costo,
+            fecha: ahora,
+            fechaCreacion: ahora,
+            movimientos: [{ fecha: ahora, costo }]
+        });
+        mostrarToast(`✔ Gasto "${nombreRaw}" registrado: ${fmtMoney(costo)}`, 'éxito', 3500);
+    }
 
     guardarEnMemoria();
     actualizarPantalla();
     nombreInp.value = ''; costoInp.value = '';
-    mostrarToast(`✔ Gasto "${nombre}" registrado: ${fmtMoney(costo)}`, 'éxito', 3500);
 }
 
 function eliminarGasto(id) {
@@ -1324,6 +1375,76 @@ function eliminarGasto(id) {
     guardarEnMemoria();
     actualizarPantalla();
     mostrarToast(`🗑 Gasto "${g.nombre}" eliminado`, 'info', 2500);
+}
+
+// ========================================================
+// 📊 GRÁFICO CIRCULAR: DISTRIBUCIÓN DE GASTOS
+// ========================================================
+function renderChartGastos() {
+    const wrap = document.getElementById('chart-gastos-wrap');
+    const canvasEl = document.getElementById('chart-gastos-canvas');
+    const legendEl = document.getElementById('chart-gastos-legend');
+    if (!wrap || !canvasEl) return;
+
+    if (gastos.length < 2 || typeof Chart === 'undefined') {
+        wrap.style.display = 'none';
+        if (chartGastos) { try { chartGastos.destroy(); } catch (e) {} chartGastos = null; }
+        return;
+    }
+
+    wrap.style.display = 'block';
+
+    const top = [...gastos]
+        .sort((a, b) => (parseFloat(b.costo) || 0) - (parseFloat(a.costo) || 0))
+        .slice(0, 6);
+
+    const paleta = ['#EF6C00', '#0288D1', '#00BCD4', '#7CB342', '#8E24AA', '#546E7A'];
+    const labels = top.map(g => g.nombre);
+    const values = top.map(g => parseFloat(g.costo) || 0);
+    const totalTop = values.reduce((a, b) => a + b, 0);
+
+    if (chartGastos) { try { chartGastos.destroy(); } catch (e) {} chartGastos = null; }
+
+    const isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+    chartGastos = new Chart(canvasEl, {
+        type: 'doughnut',
+        data: {
+            labels,
+            datasets: [{
+                data: values,
+                backgroundColor: paleta.slice(0, values.length),
+                borderColor: isDark ? '#1A2129' : '#FFFFFF',
+                borderWidth: 2,
+                hoverOffset: 6
+            }]
+        },
+        options: {
+            responsive: false,
+            cutout: '62%',
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: (ctx) => `${ctx.label}: ${fmtMoney(ctx.parsed)}`
+                    }
+                }
+            },
+            animation: { animateRotate: true, duration: 700 }
+        }
+    });
+
+    if (legendEl) {
+        legendEl.innerHTML = top.map((g, i) => {
+            const pct = totalTop > 0 ? Math.round((g.costo / totalTop) * 100) : 0;
+            return `
+                <div class="legend-row">
+                    <span class="legend-swatch" style="background:${paleta[i]}"></span>
+                    <span class="legend-name">${esc(g.nombre)}</span>
+                    <span class="legend-count">${fmtMoney(g.costo)} · ${pct}%</span>
+                </div>`;
+        }).join('');
+    }
 }
 
 // ========================================================

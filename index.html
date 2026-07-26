@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
-    <meta name="theme-color" content="#F5F5F7" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#01579B" media="(prefers-color-scheme: dark)">
+    <meta name="theme-color" content="#03A9F4" media="(prefers-color-scheme: light)">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Zampa">
@@ -196,6 +196,18 @@
                             <button class="btn-primary btn-secondary-color" onclick="agregarGasto()" data-testid="btn-guardar-gasto">
                                 <span class="material-icons-round">add</span> Registrar Gasto
                             </button>
+                        </div>
+                    </div>
+
+                    <!-- Chart gastos -->
+                    <div id="chart-gastos-wrap" class="chart-wrap" style="display:none; margin-top:12px;">
+                        <div class="chart-header">
+                            <span class="material-icons-round">pie_chart</span>
+                            <span>Distribución de gastos</span>
+                        </div>
+                        <div id="chart-gastos-inner" class="chart-inner" data-testid="chart-gastos">
+                            <canvas id="chart-gastos-canvas"></canvas>
+                            <div id="chart-gastos-legend" class="chart-legend"></div>
                         </div>
                     </div>
 
@@ -412,6 +424,9 @@
             </div>
             <h3 class="pin-title">Modo Administrador</h3>
             <p class="pin-subtitle">Ingresa el PIN de 4 dígitos</p>
+            <p class="pin-hint-kb" data-testid="pin-kb-hint">
+                Puedes usar el <kbd>teclado</kbd> · <kbd>0-9</kbd> · <kbd>⌫</kbd> · <kbd>Esc</kbd>
+            </p>
 
             <div id="pin-dots" class="pin-dots" data-testid="pin-dots">
                 <span class="pin-dot"></span>
