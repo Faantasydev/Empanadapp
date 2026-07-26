@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+ <meta name="theme-color" content="#0288d1">
     <title>Zampa - Punto de Venta e Inventario</title>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
@@ -19,12 +20,27 @@
         </div>
     </div>
 
+    <!-- Barra Superior (Header) Reorganizada y Estilizada -->
     <header class="header-control">
-        <div class="header-main">
-            <img src="logo-zampa.png" alt="Zampa Logo" class="logo-zampa">
-            <span id="icono-nube" class="material-icons nube-sincronizada" title="Estado de sincronización">cloud</span>
+        
+        <!-- Izquierda: Control de Roles -->
+        <div style="display: flex; align-items: center;">
+            <span id="icono-rol" class="material-icons" style="cursor: pointer; font-size: 26px; color: #fff;" onclick="alternarRol()" title="Cambiar Rol">badge</span>
         </div>
-        <p class="header-subtitle">Punto de Venta e Inventario</p>
+
+        <!-- Centro: Logo y Subtítulo -->
+        <div style="text-align: center; flex: 1; display: flex; flex-direction: column; align-items: center; padding: 0 8px;">
+            <img src="logo-zampa.png" alt="Zampa Logo" class="logo-zampa">
+            <span class="header-subtitle">Punto de Venta e Inventario</span>
+        </div>
+
+        <!-- Derecha: Indicador Offline y Estado de Nube -->
+        <div style="display: flex; align-items: center; gap: 6px;">
+            <div id="indicador-offline" style="display: none; background: #e65100; color: white; font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 8px; align-items: center; gap: 2px;">
+                <span class="material-icons" style="font-size: 12px;">cloud_off</span> OFFLINE
+            </div>
+            <span id="icono-nube" class="material-icons nube-sincronizada" style="font-size: 22px;" title="Estado de sincronización">cloud</span>
+        </div>
     </header>
 
     <div class="container">
@@ -39,11 +55,14 @@
     
     <div id="saldo-gran-total" style="font-size: 14px; opacity: 0.9; margin-top: 6px; font-weight: normal;">Acumulado Total: $0</div>
     
-    <div style="margin-top: 16px; display: flex; justify-content: center; width: 100%;">
-        <span style="cursor: pointer; display: inline-flex; align-items: center; gap: 5px; font-size: 13px; opacity: 0.95; padding: 6px 16px; background: rgba(255, 255, 255, 0.2); border-radius: 20px; font-weight: 500; transition: background 0.2s;" onclick="event.stopPropagation(); cerrarCaja();">
-            <span class="material-icons" style="font-size: 16px;">autorenew</span> Cerrar Caja
-        </span>
-    </div>
+    <div style="margin-top: 16px; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; width: 100%;">
+    <span style="cursor: pointer; display: inline-flex; align-items: center; gap: 5px; font-size: 13px; opacity: 0.95; padding: 6px 14px; background: rgba(255, 255, 255, 0.2); border-radius: 20px; font-weight: 500;" onclick="event.stopPropagation(); cerrarCaja();">
+        <span class="material-icons" style="font-size: 16px;">autorenew</span> Cerrar Caja
+    </span>
+    <span style="cursor: pointer; display: inline-flex; align-items: center; gap: 5px; font-size: 13px; opacity: 0.95; padding: 6px 14px; background: #25D366; color: white; border-radius: 20px; font-weight: bold; box-shadow: 0 2px 6px rgba(0,0,0,0.2);" onclick="event.stopPropagation(); enviarReporteWhatsApp();">
+        <span class="material-icons" style="font-size: 16px;">share</span> WhatsApp
+    </span>
+</div>
 
 </div>
         
@@ -167,11 +186,11 @@
             <span class="material-icons">point_of_sale</span>
             <span>Ventas</span>
         </button>
-        <button class="dock-item" onclick="cambiarPestaña('pantalla-inventario', this)">
+        <button id="dock-inventario" class="dock-item" onclick="cambiarPestaña('pantalla-inventario', this)">
             <span class="material-icons">inventory_2</span>
             <span>Inventario</span>
         </button>
-        <button class="dock-item" onclick="cambiarPestaña('pantalla-insumos', this)">
+        <button id="dock-insumos" class="dock-item" onclick="cambiarPestaña('pantalla-insumos', this)">
             <span class="material-icons">layers</span>
             <span>Insumos</span>
         </button>
