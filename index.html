@@ -20,17 +20,17 @@
     </div>
 
     <!-- Barra Superior (Header) Reorganizada y Estilizada -->
-    <header class="header-control" style="background: #0288d1; padding: 12px 16px; color: white; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 100;">
+    <header class="header-control">
         
         <!-- Izquierda: Control de Roles -->
         <div style="display: flex; align-items: center;">
             <span id="icono-rol" class="material-icons" style="cursor: pointer; font-size: 26px; color: #fff;" onclick="alternarRol()" title="Cambiar Rol">badge</span>
         </div>
 
-        <!-- Centro: Logo y Título -->
+        <!-- Centro: Logo y Subtítulo -->
         <div style="text-align: center; flex: 1; display: flex; flex-direction: column; align-items: center; padding: 0 8px;">
-            <h1 style="margin: 0; font-size: 20px; font-weight: bold; letter-spacing: 0.5px; line-height: 1.2;">Zampa</h1>
-            <span class="header-subtitle" style="font-size: 11px; opacity: 0.9; font-weight: 300;">Punto de Venta e Inventario</span>
+            <img src="logo-zampa.png" alt="Zampa Logo" class="logo-zampa">
+            <span class="header-subtitle">Punto de Venta e Inventario</span>
         </div>
 
         <!-- Derecha: Indicador Offline y Estado de Nube -->
@@ -38,7 +38,7 @@
             <div id="indicador-offline" style="display: none; background: #e65100; color: white; font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 8px; align-items: center; gap: 2px;">
                 <span class="material-icons" style="font-size: 12px;">cloud_off</span> OFFLINE
             </div>
-            <span id="icono-nube" class="material-icons nube-sincronizada" style="font-size: 22px; color: #4caf50;" title="Estado de sincronización">cloud</span>
+            <span id="icono-nube" class="material-icons nube-sincronizada" style="font-size: 22px;" title="Estado de sincronización">cloud</span>
         </div>
     </header>
 
