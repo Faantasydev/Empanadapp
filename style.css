@@ -21,15 +21,13 @@ button, input, select, textarea {
 }
 
 /* =========================================
-   BARRA SUPERIOR (HEADER) OPTIMIZADA
+   BARRA SUPERIOR (HEADER) CORREGIDA
    ========================================= */
 .header-control {
     position: fixed;
     top: 0;
-    left: 50%;
-    transform: translateX(-50%);
+    left: 0;
     width: 100%;
-    max-width: 480px;
     z-index: 999;
     background-color: #0288d1;
     padding: 10px 16px;
@@ -38,6 +36,7 @@ button, input, select, textarea {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    box-sizing: border-box;
 }
 
 .header-main {
