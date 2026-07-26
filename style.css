@@ -29,14 +29,15 @@ button, input, select, textarea {
     z-index: 100;
     background-color: #0288d1;
     padding: 12px 16px;
-    padding-top: max(12px, env(safe-area-inset-top)); /* Se adapta al notch del celular */
     color: white;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    box-shadow: none; /* Quitamos cualquier sombra que genere división */
+    border: none; /* Aseguramos que no haya bordes */
     width: 100%;
     box-sizing: border-box;
+    margin-top: 0;
 }
 
 .header-main {
