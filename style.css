@@ -24,18 +24,18 @@ button, input, select, textarea {
    BARRA SUPERIOR (HEADER) CORREGIDA
    ========================================= */
 .header-control {
-    position: fixed;
+    position: sticky;
     top: 0;
-    left: 0;
-    width: 100%;
-    z-index: 999;
+    z-index: 100;
     background-color: #0288d1;
-    padding: 10px 16px;
+    padding: 12px 16px;
+    padding-top: max(12px, env(safe-area-inset-top)); /* Se adapta al notch del celular */
     color: white;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.15);
     display: flex;
     justify-content: space-between;
     align-items: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    width: 100%;
     box-sizing: border-box;
 }
 
