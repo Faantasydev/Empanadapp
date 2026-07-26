@@ -4,17 +4,14 @@
 document.addEventListener("DOMContentLoaded", () => {
     const splashScreen = document.getElementById("splash-screen");
 
-    // Revisamos si ya se reprodujo la animación en esta sesión
     if (sessionStorage.getItem("zampa_animado")) {
         if (splashScreen) splashScreen.style.display = "none";
     } else {
-        // Marcamos que ya se vio y la ocultamos tras 2.5 segundos
         sessionStorage.setItem("zampa_animado", "true");
-        
         setTimeout(() => {
             if (splashScreen) {
                 splashScreen.classList.add("ocultar-splash");
-                setTimeout(() => splashScreen.remove(), 500); // Se borra para no estorbar
+                setTimeout(() => splashScreen.remove(), 500);
             }
         }, 2500); 
     }
@@ -33,7 +30,6 @@ const firebaseConfig = {
     appId: "1:97127633277:web:a32e2b8b7c5b64e0efbc14"
 };
 
-// Inicializar la conexión
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
@@ -46,10 +42,7 @@ let balance = parseFloat(localStorage.getItem('empanadas_balance')) || 0;
 let historial = JSON.parse(localStorage.getItem('empanadas_historial')) || [];
 let historicoAcumulado = JSON.parse(localStorage.getItem('empanadas_historico_general')) || [];
 let carrito = [];
-let nubeLista = false; // Candado de seguridad
-
-actualizarPantalla();
-
+let nubeLista = false; 
 
 // ========================================================
 // ☁️ SINCRONIZACIÓN EN TIEMPO REAL CON FIREBASE
@@ -73,16 +66,14 @@ db.ref('empanada_control/').on('value', (snapshot) => {
     actualizarPantalla();
 }, (error) => {
     console.error("Error conectando a Firebase en tiempo real:", error);
+    nubeLista = true; // Permite operar localmente si Firebase tarda en responder
+    actualizarPantalla();
 });
 
-
-
 // ========================================================
-// 🔄 FUNCIONES DE GUARDADO Y PANTALLA
+// 🔄 FUNCIONES DE GUARDADO Y PANTALLA UNIFICADAS
 // ========================================================
 function guardarEnMemoria() {
-    if (!nubeLista) return;
-
     localStorage.setItem('empanadas_inventario', JSON.stringify(inventario));
     localStorage.setItem('empanadas_insumos', JSON.stringify(insumos));
     localStorage.setItem('empanadas_balance', balance.toString());
@@ -94,6 +85,8 @@ function guardarEnMemoria() {
         nube.className = "material-icons nube-cargando";
         nube.innerText = "cloud_upload"; 
     }
+
+    if (!nubeLista) return;
 
     db.ref('empanada_control/').set({
         inventario: inventario,
@@ -119,7 +112,11 @@ function guardarEnMemoria() {
 }
 
 function actualizarPantalla() {
-    document.getElementById('balance-total').innerHTML = `$${balance.toLocaleString('es-CO')}`;
+    // 1. Aplicar reglas visuales de roles (Admin vs Vendedor Ambulante)
+    aplicarPermisosRol();
+
+    const elemBalance = document.getElementById('balance-total');
+    if (elemBalance) elemBalance.innerHTML = `$${balance.toLocaleString('es-CO')}`;
     
     let dineroDiasAnteriores = 0;
     if (Array.isArray(historicoAcumulado)) {
@@ -133,34 +130,39 @@ function actualizarPantalla() {
     }
 
     const divVentas = document.getElementById('lista-ventas-disponibles');
-    divVentas.innerHTML = inventario.length === 0 ? '<p style="color:#757575;">No hay productos en inventario</p>' : '';
-    inventario.forEach(prod => {
-        divVentas.innerHTML += `
-            <div class="item-fila">
-                <div class="item-info">
-                    <div class="nombre">${prod.nombre}</div>
-                    <div class="meta">${prod.precio.toLocaleString()} | Stock: ${prod.stock}</div>
-                </div>
-                <button class="btn-material btn-venta" onclick="agregarAlCarrito(${prod.id})">Agregar</button>
-            </div>`;
-    });
+    if (divVentas) {
+        divVentas.innerHTML = inventario.length === 0 ? '<p style="color:#757575;">No hay productos en inventario</p>' : '';
+        inventario.forEach(prod => {
+            divVentas.innerHTML += `
+                <div class="item-fila">
+                    <div class="item-info">
+                        <div class="nombre">${prod.nombre}</div>
+                        <div class="meta">${prod.precio.toLocaleString()} | Stock: ${prod.stock}</div>
+                    </div>
+                    <button class="btn-material btn-venta" onclick="agregarAlCarrito(${prod.id})">Agregar</button>
+                </div>`;
+        });
+    }
 
     const divCarrito = document.getElementById('seccion-carrito');
     const divListaCarrito = document.getElementById('lista-carrito');
     
-    if (carrito.length > 0) {
-        divCarrito.style.display = 'block';
-        divListaCarrito.innerHTML = carrito.map(p => `
-            <div style="display:flex; justify-content:space-between; font-size:14px; margin-bottom:4px;">
-                <span>• 1x ${p.nombre}</span>
-                <span style="font-weight:bold; margin-left:auto;">${p.precio.toLocaleString()}</span>
-            </div>
-        `).join('');
-        
-        let totalCarrito = carrito.reduce((sum, p) => sum + p.precio, 0);
-        document.getElementById('total-carrito').innerText = '$' + totalCarrito.toLocaleString();
-    } else {
-        divCarrito.style.display = 'none';
+    if (divCarrito && divListaCarrito) {
+        if (carrito.length > 0) {
+            divCarrito.style.display = 'block';
+            divListaCarrito.innerHTML = carrito.map(p => `
+                <div style="display:flex; justify-content:space-between; font-size:14px; margin-bottom:4px;">
+                    <span>• 1x ${p.nombre}</span>
+                    <span style="font-weight:bold; margin-left:auto;">${p.precio.toLocaleString()}</span>
+                </div>
+            `).join('');
+            
+            let totalCarrito = carrito.reduce((sum, p) => sum + p.precio, 0);
+            const totalCarritoElem = document.getElementById('total-carrito');
+            if (totalCarritoElem) totalCarritoElem.innerText = '$' + totalCarrito.toLocaleString();
+        } else {
+            divCarrito.style.display = 'none';
+        }
     }
 
     const divRecetaSelec = document.getElementById('receta-insumos-seleccion');
@@ -186,7 +188,7 @@ function actualizarPantalla() {
         inventario.forEach(prod => {
             const costo = prod.costoProduccion || 0;
             const ganancia = prod.ganancia || prod.precio;
-            const porcentaje = ((ganancia / prod.precio) * 100).toFixed(0);
+            const porcentaje = prod.precio > 0 ? ((ganancia / prod.precio) * 100).toFixed(0) : 0;
             divInventario.innerHTML += `
                 <div class="item-fila" style="background: #fafafa; margin-bottom: 12px; padding: 12px; border-radius: 8px; border: 1px solid #e0e0e0;">
                     <div style="margin-bottom: 8px;">
@@ -236,7 +238,6 @@ function actualizarPantalla() {
     }
 }
 
-
 // ========================================================
 // 📦 INSUMOS Y PRODUCTOS
 // ========================================================
@@ -254,14 +255,16 @@ function agregarInsumo() {
     insumos.push({
         id: Date.now(), nombre: nombre, costoTotal: costo, cantidadTotal: cantidad, costoUnitario: costo / cantidad
     });
-    guardarEnMemoria(); actualizarPantalla();
+    guardarEnMemoria(); 
+    actualizarPantalla();
     nombreInp.value = ''; costoInp.value = ''; cantInp.value = '';
 }
 
 function eliminarInsumo(id) {
     if (confirm("¿Eliminar este insumo?")) {
         insumos = insumos.filter(i => i.id !== id);
-        guardarEnMemoria(); actualizarPantalla();
+        guardarEnMemoria(); 
+        actualizarPantalla();
     }
 }
 
@@ -295,14 +298,16 @@ function agregarProducto() {
         costoProduccion: costoProduccionUnidad, ganancia: precio - costoProduccionUnidad, receta: recetaGuardada
     });
 
-    guardarEnMemoria(); actualizarPantalla();
+    guardarEnMemoria(); 
+    actualizarPantalla();
     nombreInput.value = ''; precioInput.value = ''; stockInput.value = '';
 }
 
 function eliminarProducto(id) {
     if (confirm("¿Eliminar producto?")) {
         inventario = inventario.filter(p => p.id !== id);
-        guardarEnMemoria(); actualizarPantalla();
+        guardarEnMemoria(); 
+        actualizarPantalla();
     }
 }
 
@@ -313,19 +318,22 @@ function editarStockProducto(id) {
     if (nuevoStockStr !== null) {
         const nuevoStock = parseInt(nuevoStockStr);
         if (!isNaN(nuevoStock) && nuevoStock >= 0) {
-            producto.stock = nuevoStock; guardarEnMemoria(); actualizarPantalla();
+            producto.stock = nuevoStock; 
+            guardarEnMemoria(); 
+            actualizarPantalla();
         } else { alert("Número inválido."); }
     }
 }
 
 // ========================================================
-// 💰 VENTAS, CARRITO Y VUELTOS
+// 💰 VENTAS, CARRITO Y VUELTOS (BLINDADAS OFFLINE)
 // ========================================================
 let totalVentaActual = 0;
 let callbackConfirmarVenta = null;
 
 function abrirCalculadoraVueltos(total, callbackExito) {
-    totalVentaActual = total; callbackConfirmarVenta = callbackExito;
+    totalVentaActual = total; 
+    callbackConfirmarVenta = callbackExito;
     document.getElementById('vueltos-total-venta').innerText = '$' + total.toLocaleString();
     document.getElementById('vueltos-paga-con').value = '';
     document.getElementById('vueltos-resultado').innerText = '$0';
@@ -355,63 +363,73 @@ function cerrarModalVueltos() { document.getElementById('modal-vueltos').style.d
 function finalizarVentaConVueltos() { cerrarModalVueltos(); if (typeof callbackConfirmarVenta === 'function') callbackConfirmarVenta(); }
 
 function agregarAlCarrito(id) {
-    // ⚡ AGREGAR ESTAS DOS LÍNEAS AQUÍ:
-    vibrar(30); // Vibra en el dedo al tocar "AGREGAR"
-    efectoVisualToque(event?.target); // Hace que el botón verde rebote
+    vibrar(30); 
+    efectoVisualToque(event?.target); 
 
     const producto = inventario.find(p => p.id === id);
     if (!producto) return;
     const enCarritoActual = carrito.filter(p => p.id === id).length;
     if (enCarritoActual >= producto.stock) return alert("¡No hay más stock disponible!");
-    carrito.push(producto); guardarEnMemoria(); actualizarPantalla();
+    carrito.push(producto); 
+    guardarEnMemoria(); 
+    actualizarPantalla();
 }
 
 function limpiarCarrito() { carrito = []; guardarEnMemoria(); actualizarPantalla(); }
+
+function ejecutarTransaccionVenta(detalleVenta, totalVenta, actualizarStockCallback) {
+    const hora = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    
+    // Ejecutar lógica de stock local
+    actualizarStockCallback();
+
+    // Estructura del registro
+    const transaccion = {
+        productoId: 'venta_pos',
+        detalle: detalleVenta,
+        total: totalVenta,
+        hora: hora
+    };
+
+    balance += totalVenta;
+    historial.unshift(transaccion);
+
+    // Si no hay red, guardar en la cola offline local
+    if (!navigator.onLine) {
+        guardarVentaOffline(transaccion);
+        mostrarToast("📴 Venta guardada localmente (Sin red). Se sincronizará al volver la señal.", "alerta", 4000);
+    }
+
+    guardarEnMemoria();
+    actualizarPantalla();
+}
 
 function venderUno(id) {
     const producto = inventario.find(p => p.id === id);
     if (!producto || producto.stock <= 0) return;
 
     abrirCalculadoraVueltos(producto.precio, function() {
-        producto.stock -= 1;
-        balance += producto.precio;
-        const hora = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        
-        const ventaExistente = historial.find(h => h.hora === hora);
-        if (ventaExistente) {
-            ventaExistente.total += producto.precio;
-            ventaExistente.detalle = ventaExistente.detalle.replace(/\+/g, ',');
-            let items = ventaExistente.detalle.split(", ");
-            let encontrados = false;
-            for(let i = 0; i < items.length; i++) {
-                if(items[i].includes(producto.nombre)) {
-                    let partes = items[i].split(" ");
-                    items[i] = (parseInt(partes[0]) + 1) + " " + producto.nombre;
-                    encontrados = true; break;
-                }
-            }
-            if(!encontrados) items.push("1 " + producto.nombre);
-            ventaExistente.detalle = items.join(", ");
-        } else {
-            historial.unshift({ productoId: producto.id, detalle: "1 " + producto.nombre, total: producto.precio, hora: hora });
-        }
-        guardarEnMemoria(); actualizarPantalla();
+        ejecutarTransaccionVenta(`1 ${producto.nombre}`, producto.precio, () => {
+            producto.stock -= 1;
+        });
     });
 }
 
 function cobrarVenta() {
     if (carrito.length === 0) return;
     let total = carrito.reduce((sum, p) => sum + p.precio, 0);
+    
+    const carritoCopia = [...carrito];
+    const detalleCombo = obtenerResumenCarrito(carritoCopia);
+
     abrirCalculadoraVueltos(total, function() {
-        const hora = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        carrito.forEach(itemCarrito => {
-            const prodInventario = inventario.find(p => p.id === itemCarrito.id);
-            if (prodInventario) prodInventario.stock -= 1;
+        ejecutarTransaccionVenta(detalleCombo, total, () => {
+            carritoCopia.forEach(itemCarrito => {
+                const prodInventario = inventario.find(p => p.id === itemCarrito.id);
+                if (prodInventario) prodInventario.stock -= 1;
+            });
+            carrito = [];
         });
-        const detalleCombo = obtenerResumenCarrito(carrito);
-        balance += total;
-        historial.unshift({ productoId: 'combo_venta', detalle: detalleCombo, total: total, hora: hora });
-        carrito = []; guardarEnMemoria(); actualizarPantalla();
     });
 }
 
@@ -422,12 +440,16 @@ function deshacerVenta(index) {
 
     let items = venta.detalle.split(", ");
     items.forEach(item => {
-        let nombreProducto = item.substring(item.indexOf(' ') + 1);
+        let partes = item.trim().split(" ");
+        let cantidad = parseInt(partes[0]) || 1;
+        let nombreProducto = partes.slice(1).join(" ");
         const producto = inventario.find(p => p.nombre === nombreProducto);
-        if (producto) producto.stock += parseInt(item.split(" ")[0]);
+        if (producto) producto.stock += cantidad;
     });
+    
     historial.splice(index, 1);
-    guardarEnMemoria(); actualizarPantalla();
+    guardarEnMemoria(); 
+    actualizarPantalla();
 }
 
 function obtenerResumenCarrito(listaProductos) {
@@ -442,6 +464,8 @@ function obtenerResumenCarrito(listaProductos) {
 function mostrarHistorialCierres() {
     const divModal = document.getElementById('modal-historial-cierres');
     const divLista = document.getElementById('lista-cierres-dia-a-dia');
+    if (!divLista || !divModal) return;
+    
     divLista.innerHTML = '';
     if (historicoAcumulado.length === 0) {
         divLista.innerHTML = '<p style="text-align:center; color:#777; font-size:14px; margin:20px 0;">No hay cierres de caja registrados.</p>';
@@ -561,35 +585,24 @@ function agregarDiaDeLibreta() {
     mostrarHistorialCierres(); 
 }
 
-// ========================================================
-// 💰 FUNCIÓN PARA SUMAR MANUALMENTE AL BALANCE (CORREGIDA)
-// ========================================================
 function sumarAlBalance(event) {
     if (event) {
         event.stopPropagation();
         event.preventDefault();
     }
     
-    // ⚡ AGREGAR ESTAS DOS LÍNEAS AQUÍ:
-    vibrar(40); // Tick físico al tocar el número grande
-    efectoVisualToque(document.getElementById("balance-total")); // El número hace un rebote en pantalla
+    vibrar(40); 
+    efectoVisualToque(document.getElementById("balance-total")); 
 
     let cantidadIngresada = prompt("¿Cuánto deseas sumar al balance de hoy?");
     
-    // 3. Verificamos que no se haya cancelado
     if (cantidadIngresada !== null && cantidadIngresada.trim() !== "") {
-        
         let montoASumar = parseInt(cantidadIngresada.replace(/\D/g, ''));
 
         if (!isNaN(montoASumar) && montoASumar > 0) {
-            
-            // 🔥 CORRECCIÓN CLAVE: Sumamos el dinero a la variable global 'balance'
             balance += montoASumar;
-
-            // 🔥 CORRECCIÓN CLAVE: Guardamos en Firebase, memoria local y actualizamos la pantalla
             guardarEnMemoria();
             actualizarPantalla();
-            
         } else {
             alert("⚠️ Por favor, ingresa una cantidad válida mayor a 0.");
         }
@@ -599,35 +612,35 @@ function sumarAlBalance(event) {
 // ========================================================
 // 🔐 GESTIÓN DE ROLES Y SEGURIDAD (MODO VENDEDOR / ADMIN)
 // ========================================================
-const PIN_ADMIN = "1234"; // 💡 Puedes cambiar este PIN de 4 dígitos por el que desees
-let rolActual = localStorage.getItem('zampa_rol') || 'vendedor'; // Por defecto, inicia protegido como Vendedor
+const PIN_ADMIN = "1234"; 
+let rolActual = localStorage.getItem('zampa_rol') || 'vendedor'; 
 
 function aplicarPermisosRol() {
     const esAdmin = (rolActual === 'admin');
     const iconoRol = document.getElementById('icono-rol');
     
-    // Cambiar ícono y color en el header según el rol
     if (iconoRol) {
         iconoRol.innerText = esAdmin ? 'admin_panel_settings' : 'badge';
         iconoRol.style.color = esAdmin ? '#ffeb3b' : '#ffffff';
         iconoRol.title = esAdmin ? 'Modo Administrador (Toca para cambiar)' : 'Modo Vendedor (Toca para entrar con PIN)';
     }
 
-    // Ocultar o mostrar pestañas sensibles en el Dock inferior
     const btnInventario = document.getElementById('dock-inventario');
     const btnInsumos = document.getElementById('dock-insumos');
     if (btnInventario) btnInventario.style.display = esAdmin ? 'flex' : 'none';
     if (btnInsumos) btnInsumos.style.display = esAdmin ? 'flex' : 'none';
 
-    // Ocultar el Acumulado Total al vendedor (solo ve lo que hace en su noche)
     const saldoGranTotal = document.getElementById('saldo-gran-total');
     if (saldoGranTotal) saldoGranTotal.style.display = esAdmin ? 'block' : 'none';
 
-    // Si el vendedor está en una pestaña prohibida al cambiar de rol, expulsarlo a Ventas
-    if (!esAdmin && (document.getElementById('pantalla-inventario').classList.contains('activa') || 
-                     document.getElementById('pantalla-insumos').classList.contains('activa'))) {
-        const btnVentas = document.querySelector('.dock-item');
-        if (typeof cambiarPestaña === 'function') cambiarPestaña('pantalla-ventas', btnVentas);
+    const pantallaInv = document.getElementById('pantalla-inventario');
+    const pantallaIns = document.getElementById('pantalla-insumos');
+    
+    if (!esAdmin && pantallaInv && pantallaIns) {
+        if (pantallaInv.classList.contains('activa') || pantallaIns.classList.contains('activa')) {
+            const btnVentas = document.querySelector('.dock-item');
+            if (typeof cambiarPestaña === 'function') cambiarPestaña('pantalla-ventas', btnVentas);
+        }
     }
 }
 
@@ -654,37 +667,24 @@ function alternarRol() {
     }
 }
 
-// Ejecutar permisos inmediatamente al cargar la app y cada vez que se actualiza la pantalla
-document.addEventListener("DOMContentLoaded", aplicarPermisosRol);
-const _actualizarPantallaOriginal = typeof actualizarPantalla === 'function' ? actualizarPantalla : null;
-actualizarPantalla = function() {
-    if (_actualizarPantallaOriginal) _actualizarPantallaOriginal();
-    aplicarPermisosRol();
-};
-
-
 // ========================================================
 // 📲 REPORTE INTELIGENTE POR WHATSAPP (CIERRE DE TURNO)
 // ========================================================
 function enviarReporteWhatsApp() {
-    // 1. Validar que haya información para reportar
     if (balance <= 0 && historial.length === 0) {
         return alert("⚠️ No hay ventas registradas hoy para generar un reporte de cierre.");
     }
 
-    // 2. Pedir o recuperar el número del dueño desde la memoria (solo lo pide la primera vez)
     let telefonoDueño = localStorage.getItem('zampa_telefono_dueño');
     if (!telefonoDueño) {
         telefonoDueño = prompt("📱 Ingresa el número de WhatsApp del dueño con código de país (Ej: 573001234567 para Colombia):");
         if (!telefonoDueño || telefonoDueño.trim() === "") return;
-        telefonoDueño = telefonoDueño.replace(/\D/g, ''); // Limpiar símbolos y espacios
+        telefonoDueño = telefonoDueño.replace(/\D/g, ''); 
         localStorage.setItem('zampa_telefono_dueño', telefonoDueño);
     }
 
-    // 3. Procesar el historial para contar cuántas empanadas se vendieron por sabor
     let conteoVentas = {};
     historial.forEach(venta => {
-        // Separa ítems si fue un combo o venta múltiple (Ej: "2 Empanada de carne, 1 Limonada")
         let items = venta.detalle.split(", ");
         items.forEach(item => {
             let partes = item.trim().split(" ");
@@ -694,17 +694,14 @@ function enviarReporteWhatsApp() {
         });
     });
 
-    // 4. Formatear la lista de productos vendidos
     let detalleVentasTexto = "";
     for (let [nombre, cant] of Object.entries(conteoVentas)) {
         detalleVentasTexto += `▪️ *${cant}x* ${nombre}\n`;
     }
     if (detalleVentasTexto === "") detalleVentasTexto = "▪️ Sin detalle individual\n";
 
-    // 5. Formatear el stock sobrante devuelto en la cava
     let detalleStockTexto = inventario.map(prod => `▪️ ${prod.nombre}: *${prod.stock} disp.*`).join('\n');
 
-    // 6. Construir el cuerpo del mensaje
     const ahora = new Date();
     const fechaStr = ahora.toLocaleDateString('es-CO') + " - " + ahora.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
@@ -716,7 +713,6 @@ function enviarReporteWhatsApp() {
                   `📦 *STOCK SOBRANTE (EN CAVA):*\n${detalleStockTexto}\n\n` +
                   `🚀 _Generado desde Zampa POS_`;
 
-    // 7. Abrir WhatsApp con el texto codificado
     const url = `https://api.whatsapp.com/send?phone=${telefonoDueño}&text=${encodeURIComponent(mensaje)}`;
     window.open(url, '_blank');
 }
@@ -724,32 +720,24 @@ function enviarReporteWhatsApp() {
 // ========================================================
 // ⚡ MOTOR DE VIBRACIÓN Y TOASTS FLOTANTES (UX CALLE)
 // ========================================================
-
-// 1. Motor Hápico: Genera un "tick" físico en el teléfono del vendedor
 function vibrar(patron = 35) {
     if ("vibrate" in navigator) {
         try {
-            navigator.vibrate(patron); // 35ms da un golpe seco y fino tipo iPhone/Android Pro
-        } catch (e) {
-            // Ignorar si el navegador o el modo ahorro de batería bloquean la vibración
-        }
+            navigator.vibrate(patron); 
+        } catch (e) {}
     }
 }
 
-// 2. Efecto visual de rebote en pantalla
 function efectoVisualToque(elemento) {
     if (!elemento) return;
     elemento.classList.remove('efecto-toque');
-    void elemento.offsetWidth; // Forzar reinicio de animación CSS
+    void elemento.offsetWidth; 
     elemento.classList.add('efecto-toque');
 }
 
-// 3. Creador de Toasts (Notificaciones suaves abajo)
 function mostrarToast(mensaje, tipo = 'info', duracion = 3000) {
-    // Si es error vibra 3 veces rápido, si es normal vibra un tick seco
     vibrar(tipo === 'error' ? [50, 40, 50] : 35);
 
-    // Crea el contenedor en el HTML automáticamente si no existe
     let container = document.getElementById('toast-container');
     if (!container) {
         container = document.createElement('div');
@@ -760,7 +748,6 @@ function mostrarToast(mensaje, tipo = 'info', duracion = 3000) {
     const toast = document.createElement('div');
     toast.className = `toast ${tipo}`;
     
-    // Asignar ícono automático
     let icono = 'info';
     if (tipo === 'éxito') icono = 'check_circle';
     if (tipo === 'error') icono = 'error';
@@ -769,7 +756,6 @@ function mostrarToast(mensaje, tipo = 'info', duracion = 3000) {
     toast.innerHTML = `<span class="material-icons" style="font-size:22px;">${icono}</span> <span style="flex:1;">${mensaje}</span>`;
     container.appendChild(toast);
 
-    // Animación de entrada y salida
     setTimeout(() => toast.classList.add('mostrar'), 10);
     setTimeout(() => {
         toast.classList.remove('mostrar');
@@ -777,12 +763,10 @@ function mostrarToast(mensaje, tipo = 'info', duracion = 3000) {
     }, duracion);
 }
 
-// 4. SOBREESCRITURA MAGICA: Convierte todos tus viejos alert() en Toasts
 window.alert = function(mensaje) {
     let tipo = 'info';
     let msgMin = String(mensaje).toLowerCase();
     
-    // Autodetectar el color del aviso según las palabras
     if (msgMin.includes('error') || msgMin.includes('inválido') || msgMin.includes('incorrecto') || msgMin.includes('falta') || msgMin.includes('denegado') || msgMin.includes('no hay')) {
         tipo = 'error';
     } else if (msgMin.includes('éxito') || msgMin.includes('correctamente') || msgMin.includes('activado') || msgMin.includes('cerrada') || msgMin.includes('acumulada')) {
@@ -793,3 +777,61 @@ window.alert = function(mensaje) {
     
     mostrarToast(mensaje, tipo, 3500);
 };
+
+// ========================================================
+// 📶 MOTOR OFFLINE Y COLA DE SINCRONIZACIÓN AUTOMÁTICA
+// ========================================================
+function actualizarEstadoRed() {
+    const indicador = document.getElementById('indicador-offline');
+    const iconoNube = document.getElementById('icono-nube');
+    
+    if (!navigator.onLine) {
+        if (indicador) indicador.style.display = 'flex';
+        if (iconoNube) {
+            iconoNube.innerText = 'cloud_off';
+            iconoNube.style.color = '#ff9800';
+            iconoNube.title = 'Modo Offline: Guardando ventas localmente';
+        }
+    } else {
+        if (indicador) indicador.style.display = 'none';
+        if (iconoNube) {
+            iconoNube.innerText = 'cloud';
+            iconoNube.style.color = '#4caf50';
+            iconoNube.title = 'Conectado a la nube (Firebase)';
+        }
+        sincronizarColaPendiente();
+    }
+}
+
+window.addEventListener('online', () => {
+    actualizarEstadoRed();
+    mostrarToast("¡Internet recuperado! Sincronizando datos con Firebase...", "éxito", 3000);
+});
+
+window.addEventListener('offline', () => {
+    actualizarEstadoRed();
+    mostrarToast("⚠️ Sin conexión a internet. Las ventas se guardarán localmente.", "alerta", 4000);
+});
+
+document.addEventListener("DOMContentLoaded", actualizarEstadoRed);
+
+function guardarVentaOffline(nuevaVenta) {
+    let cola = JSON.parse(localStorage.getItem('zampa_cola_offline')) || [];
+    cola.push(nuevaVenta);
+    localStorage.setItem('zampa_cola_offline', JSON.stringify(cola));
+}
+
+function sincronizarColaPendiente() {
+    if (!navigator.onLine) return;
+    
+    let cola = JSON.parse(localStorage.getItem('zampa_cola_offline')) || [];
+    if (cola.length === 0) return; 
+
+    console.log(`Sincronizando ${cola.length} ventas pendientes con Firebase...`);
+
+    // Las ventas ya están inyectadas localmente, simplemente forzamos guardado completo en Firebase
+    guardarEnMemoria();
+
+    localStorage.removeItem('zampa_cola_offline');
+    mostrarToast("✅ ¡Ventas offline sincronizadas con éxito en la nube!", "éxito", 3000);
+}
