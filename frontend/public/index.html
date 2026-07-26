@@ -2,22 +2,17 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
-    <meta name="theme-color" content="#F5F5F7" media="(prefers-color-scheme: light)">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Zampa">
-    <title>Zampa · Punto de Venta e Inventario</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0288d1">
+    <title>Zampa - Punto de Venta e Inventario</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
-    <link rel="apple-touch-icon" href="logo.png">
 </head>
 <body>
 
@@ -31,26 +26,26 @@
         </div>
     </div>
 
-    <!-- ==================== HEADER (iOS Large Title Style) ==================== -->
+    <!-- Barra Superior (Header) -->
     <header class="header-control" data-testid="app-header">
-        <div class="header-left">
-            <button id="icono-rol" class="header-icon-btn" onclick="alternarRol()" title="Cambiar Rol" data-testid="btn-rol">
-                <span class="material-icons-round">badge</span>
-            </button>
+        
+        <!-- Izquierda: Control de Roles -->
+        <div>
+            <span id="icono-rol" class="material-icons header-icon-btn" onclick="alternarRol()" title="Cambiar Rol" data-testid="btn-rol" style="cursor:pointer;font-size:26px;color:#fff;">badge</span>
         </div>
 
-        <div class="header-center">
-            <img src="logo-zampa.png" alt="Zampa" class="logo-zampa">
+        <!-- Centro: Logo y Subtítulo -->
+        <div style="text-align: center; flex: 1; display: flex; flex-direction: column; align-items: center; padding: 0 8px;">
+            <img src="logo-zampa.png" alt="Zampa Logo" class="logo-zampa">
+            <span class="header-subtitle">Punto de Venta e Inventario</span>
         </div>
 
-        <div class="header-right">
-            <div id="indicador-offline" class="chip-offline" data-testid="chip-offline">
-                <span class="material-icons-round">wifi_off</span>
-                <span>Offline</span>
+        <!-- Derecha: Indicador Offline y Estado de Nube -->
+        <div style="display: flex; align-items: center; gap: 6px;">
+            <div id="indicador-offline" class="chip-offline" data-testid="chip-offline" style="display: none; background: #e65100; color: white; font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 8px;">
+                <span class="material-icons" style="font-size: 12px;">cloud_off</span> OFFLINE
             </div>
-            <button id="icono-nube-btn" class="header-icon-btn" title="Estado de sincronización" data-testid="btn-nube">
-                <span id="icono-nube" class="material-icons-round nube-sincronizada">cloud_done</span>
-            </button>
+            <span id="icono-nube" class="material-icons nube-sincronizada" style="font-size: 22px; color: #4caf50;" title="Estado de sincronización">cloud</span>
         </div>
     </header>
 
@@ -73,10 +68,10 @@
 
                 <div class="balance-actions">
                     <button class="pill-action" onclick="event.stopPropagation(); cerrarCaja();" data-testid="btn-cerrar-caja">
-                        <span class="material-icons-round">autorenew</span> Cerrar Caja
+                        <span class="material-icons">autorenew</span> Cerrar Caja
                     </button>
                     <button class="pill-action pill-whatsapp" onclick="event.stopPropagation(); enviarReporteWhatsApp();" data-testid="btn-whatsapp">
-                        <span class="material-icons-round">ios_share</span> WhatsApp
+                        <span class="material-icons">ios_share</span> WhatsApp
                     </button>
                 </div>
             </div>
@@ -85,13 +80,13 @@
             <div class="accordion-section open" id="acc-ventas">
                 <button type="button" class="accordion-toggle" onclick="toggleAccordion('acc-ventas')" data-testid="btn-toggle-ventas">
                     <span class="accordion-toggle-left">
-                        <span class="material-icons-round">shopping_basket</span>
+                        <span class="material-icons">shopping_basket</span>
                         <span>
                             <span class="accordion-title">Registrar Venta</span>
                             <span class="accordion-subtitle" id="ventas-summary">Selecciona productos</span>
                         </span>
                     </span>
-                    <span class="material-icons-round accordion-arrow">expand_more</span>
+                    <span class="material-icons accordion-arrow">expand_more</span>
                 </button>
                 <div class="accordion-content">
                     <div id="lista-ventas-disponibles" class="product-grid" data-testid="lista-ventas"></div>
@@ -101,7 +96,7 @@
             <!-- Carrito flotante -->
             <div id="seccion-carrito" class="cart-card" data-testid="seccion-carrito" style="display:none;">
                 <div class="cart-header">
-                    <span class="material-icons-round">shopping_bag</span>
+                    <span class="material-icons">shopping_bag</span>
                     <span>Resumen del pedido</span>
                 </div>
                 <div id="lista-carrito" class="cart-list"></div>
@@ -110,7 +105,7 @@
                     <span id="total-carrito" class="cart-total-value" data-testid="cart-total">$0</span>
                 </div>
                 <button class="btn-primary btn-cobrar" onclick="cobrarVenta()" data-testid="btn-cobrar">
-                    <span class="material-icons-round">payments</span> Cobrar Venta
+                    <span class="material-icons">payments</span> Cobrar Venta
                 </button>
                 <button class="btn-ghost" onclick="limpiarCarrito()" data-testid="btn-cancelar-carrito">Cancelar</button>
             </div>
@@ -146,7 +141,7 @@
                     <div id="receta-insumos-seleccion" class="receta-box"></div>
 
                     <button class="btn-primary" onclick="agregarProducto()" data-testid="btn-guardar-producto">
-                        <span class="material-icons-round">add</span> Guardar Producto
+                        <span class="material-icons">add</span> Guardar Producto
                     </button>
                 </div>
             </div>
@@ -155,13 +150,13 @@
             <div class="accordion-section open" id="acc-inventario" style="margin-top:24px;">
                 <button type="button" class="accordion-toggle" onclick="toggleAccordion('acc-inventario')" data-testid="btn-toggle-inventario">
                     <span class="accordion-toggle-left">
-                        <span class="material-icons-round">inventory_2</span>
+                        <span class="material-icons">inventory_2</span>
                         <span>
                             <span class="accordion-title">Inventario</span>
                             <span class="accordion-subtitle" id="inventario-summary">Márgenes de ganancia</span>
                         </span>
                     </span>
-                    <span class="material-icons-round accordion-arrow">expand_more</span>
+                    <span class="material-icons accordion-arrow">expand_more</span>
                 </button>
                 <div class="accordion-content">
                     <div id="lista-inventario-completo" class="product-grid" data-testid="lista-inventario"></div>
@@ -172,19 +167,19 @@
             <div class="accordion-section" id="acc-gastos" data-testid="accordion-gastos">
                 <button type="button" class="accordion-toggle" onclick="toggleAccordion('acc-gastos')" data-testid="btn-toggle-gastos">
                     <span class="accordion-toggle-left">
-                        <span class="material-icons-round">savings</span>
+                        <span class="material-icons">savings</span>
                         <span>
                             <span class="accordion-title">Gastos e Inversiones</span>
                             <span class="accordion-subtitle" id="gastos-summary">Ítems que no se venden (equipos, consumibles...)</span>
                         </span>
                     </span>
-                    <span class="material-icons-round accordion-arrow" id="accordion-arrow">expand_more</span>
+                    <span class="material-icons accordion-arrow" id="accordion-arrow">expand_more</span>
                 </button>
 
                 <div class="accordion-content" id="accordion-content-gastos">
                     <div class="card" style="margin-top:12px;">
                         <h3 class="card-inline-title">
-                            <span class="material-icons-round">add_shopping_cart</span> Agregar gasto/inversión
+                            <span class="material-icons">add_shopping_cart</span> Agregar gasto/inversión
                         </h3>
                         <div class="formulario">
                             <div class="grupo-input">
@@ -194,7 +189,7 @@
                                 <input type="number" id="gasto-costo" placeholder="¿Cuánto costó? ($)" data-testid="input-gasto-costo">
                             </div>
                             <button class="btn-primary btn-secondary-color" onclick="agregarGasto()" data-testid="btn-guardar-gasto">
-                                <span class="material-icons-round">add</span> Registrar Gasto
+                                <span class="material-icons">add</span> Registrar Gasto
                             </button>
                         </div>
                     </div>
@@ -221,7 +216,7 @@
                         <input type="number" id="insumo-cantidad" placeholder="Cantidad total" data-testid="input-insumo-cantidad">
                     </div>
                     <button class="btn-primary btn-secondary-color" onclick="agregarInsumo()" data-testid="btn-guardar-insumo">
-                        <span class="material-icons-round">playlist_add</span> Guardar Insumo
+                        <span class="material-icons">playlist_add</span> Guardar Insumo
                     </button>
                 </div>
             </div>
@@ -251,7 +246,7 @@
             <!-- Gráfico circular Top Deudores -->
             <div id="chart-deudores-wrap" class="chart-wrap" style="display:none;">
                 <div class="chart-header">
-                    <span class="material-icons-round">groups</span>
+                    <span class="material-icons">groups</span>
                     <span>Top personas que más deben</span>
                 </div>
                 <div id="chart-deudores-inner" class="chart-inner" data-testid="chart-deudores">
@@ -262,7 +257,7 @@
 
             <!-- Form nuevo deudor -->
             <div class="card">
-                <h3 class="card-inline-title"><span class="material-icons-round">person_add</span> Agregar deudor</h3>
+                <h3 class="card-inline-title"><span class="material-icons">person_add</span> Agregar deudor</h3>
                 <div class="formulario">
                     <div class="grupo-input">
                         <input type="text" id="deudor-nombre" placeholder="Nombre completo" data-testid="input-deudor-nombre">
@@ -271,11 +266,11 @@
                         <input type="number" id="deudor-monto" placeholder="Monto que debe ($)" data-testid="input-deudor-monto">
                     </div>
                     <div class="deuda-hint">
-                        <span class="material-icons-round">info</span>
+                        <span class="material-icons">info</span>
                         Se sumará automáticamente <strong>10% de recargo</strong> al monto ingresado
                     </div>
                     <button class="btn-primary" onclick="agregarDeudor()" data-testid="btn-guardar-deudor">
-                        <span class="material-icons-round">add</span> Registrar Deuda
+                        <span class="material-icons">add</span> Registrar Deuda
                     </button>
                 </div>
             </div>
@@ -309,26 +304,26 @@
     <nav class="dock-inferior" data-testid="dock">
         <button id="dock-inventario" class="dock-item" onclick="cambiarPestaña('pantalla-inventario', this)" data-testid="dock-inventario">
             <span class="dock-indicator"></span>
-            <span class="material-icons-round">inventory_2</span>
+            <span class="material-icons">inventory_2</span>
             <span class="dock-label">Inventario</span>
         </button>
         <button id="dock-insumos" class="dock-item" onclick="cambiarPestaña('pantalla-insumos', this)" data-testid="dock-insumos">
             <span class="dock-indicator"></span>
-            <span class="material-icons-round">layers</span>
+            <span class="material-icons">layers</span>
             <span class="dock-label">Insumos</span>
         </button>
         <button class="dock-item dock-ventas-highlight activo" onclick="cambiarPestaña('pantalla-ventas', this)" data-testid="dock-ventas">
-            <span class="material-icons-round">point_of_sale</span>
+            <span class="material-icons">point_of_sale</span>
             <span class="dock-label">Ventas</span>
         </button>
         <button class="dock-item" onclick="cambiarPestaña('pantalla-deudores', this)" data-testid="dock-deudores">
             <span class="dock-indicator"></span>
-            <span class="material-icons-round">handshake</span>
+            <span class="material-icons">handshake</span>
             <span class="dock-label">Fiados</span>
         </button>
         <button class="dock-item" onclick="cambiarPestaña('pantalla-pagos', this)" data-testid="dock-qr">
             <span class="dock-indicator"></span>
-            <span class="material-icons-round">qr_code_2</span>
+            <span class="material-icons">qr_code_2</span>
             <span class="dock-label">QR Pago</span>
         </button>
     </nav>
@@ -338,7 +333,7 @@
         <div class="modal-sheet">
             <div class="modal-grabber"></div>
             <h3 class="modal-title">
-                <span class="material-icons-round">calculate</span> Total de la Venta
+                <span class="material-icons">calculate</span> Total de la Venta
             </h3>
             <div id="vueltos-total-venta" class="modal-big-amount" data-testid="modal-total-venta">$0</div>
 
@@ -362,7 +357,7 @@
             <div class="modal-actions">
                 <button class="btn-ghost btn-flex" onclick="cerrarModalVueltos()" data-testid="btn-cancelar-vueltos">Cancelar</button>
                 <button id="btn-confirmar-venta" class="btn-primary btn-flex" onclick="finalizarVentaConVueltos()" disabled data-testid="btn-confirmar-venta">
-                    <span class="material-icons-round">check_circle</span> Confirmar
+                    <span class="material-icons">check_circle</span> Confirmar
                 </button>
             </div>
         </div>
@@ -373,13 +368,13 @@
         <div class="modal-sheet">
             <div class="modal-grabber"></div>
             <h3 class="modal-title">
-                <span class="material-icons-round">history</span> Historial de Días
+                <span class="material-icons">history</span> Historial de Días
             </h3>
 
             <!-- Gráfico circular top productos -->
             <div id="chart-productos-wrap" class="chart-wrap">
                 <div class="chart-header">
-                    <span class="material-icons-round">insights</span>
+                    <span class="material-icons">insights</span>
                     <span>Productos más vendidos</span>
                 </div>
                 <div id="chart-productos-inner" class="chart-inner" data-testid="chart-productos">
@@ -387,13 +382,13 @@
                     <div id="chart-productos-legend" class="chart-legend"></div>
                 </div>
                 <div id="chart-productos-empty" class="chart-empty" style="display:none;">
-                    <span class="material-icons-round">pie_chart</span>
+                    <span class="material-icons">pie_chart</span>
                     <p>Aún no hay suficientes ventas para generar estadísticas.</p>
                 </div>
             </div>
 
             <button onclick="agregarDiaDeLibreta()" class="btn-primary btn-warning-color" data-testid="btn-libreta">
-                <span class="material-icons-round">menu_book</span> Agregar día de libreta
+                <span class="material-icons">menu_book</span> Agregar día de libreta
             </button>
 
             <div id="lista-cierres-dia-a-dia" class="cierres-lista" data-testid="lista-cierres"></div>
@@ -408,7 +403,7 @@
             <div class="modal-grabber"></div>
 
             <div class="pin-lock-icon">
-                <span class="material-icons-round">lock</span>
+                <span class="material-icons">lock</span>
             </div>
             <h3 class="pin-title">Modo Administrador</h3>
             <p class="pin-subtitle">Ingresa el PIN de 4 dígitos</p>
@@ -433,7 +428,7 @@
                 <button type="button" class="pin-key pin-key-cancel" onclick="cerrarModalPin()" data-testid="pin-key-cancel">Cancelar</button>
                 <button type="button" class="pin-key" onclick="pinKeyPress(0)" data-testid="pin-key-0">0</button>
                 <button type="button" class="pin-key pin-key-del" onclick="pinBorrar()" data-testid="pin-key-del">
-                    <span class="material-icons-round">backspace</span>
+                    <span class="material-icons">backspace</span>
                 </button>
             </div>
         </div>
