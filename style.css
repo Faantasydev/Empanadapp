@@ -1,19 +1,36 @@
 /* =========================================
-   1. ESTILOS GENERALES Y RESET
+   1. ESTILOS GENERALES Y VARIABLES
    ========================================= */
+:root {
+    --primary: #0284c7;
+    --primary-dark: #0369a1;
+    --primary-light: #e0f2fe;
+    --accent: #14b8a6;
+    --bg-app: #f8fafc;
+    --text-main: #0f172a;
+    --text-muted: #64748b;
+    --card-bg: #ffffff;
+    --shadow-soft: 0 10px 25px -5px rgba(15, 23, 42, 0.05), 0 8px 10px -6px rgba(15, 23, 42, 0.05);
+    --shadow-hover: 0 20px 30px -10px rgba(2, 132, 199, 0.15);
+    --radius-lg: 20px;
+    --radius-md: 14px;
+    --radius-sm: 8px;
+}
+
 * {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
-    font-family: 'Roboto', -apple-system, sans-serif;
+    font-family: 'Inter', 'Roboto', -apple-system, sans-serif;
+    -webkit-tap-highlight-color: transparent;
 }
 
 html, body {
     touch-action: manipulation;
     -webkit-text-size-adjust: 100%;
-    background-color: #f0f4f8;
-    color: #1a237e;
-    padding-bottom: 90px;
+    background-color: var(--bg-app);
+    color: var(--text-main);
+    padding-bottom: 95px;
 }
 
 button, input, select, textarea {
@@ -21,23 +38,24 @@ button, input, select, textarea {
 }
 
 /* =========================================
-   2. BARRA SUPERIOR (HEADER)
+   2. BARRA SUPERIOR (HEADER PREMIUM)
    ========================================= */
 .header-control {
     position: sticky;
     top: 0;
     z-index: 100;
-    background-color: #0288d1;
-    padding: 12px 16px;
+    background: rgba(2, 132, 199, 0.95);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    padding: 14px 20px;
     color: white;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    box-shadow: none;
-    border: none;
+    box-shadow: 0 4px 20px rgba(2, 132, 199, 0.2);
     width: 100%;
     box-sizing: border-box;
-    margin-top: 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .header-main {
@@ -48,16 +66,17 @@ button, input, select, textarea {
 }
 
 .logo-zampa {
-    height: 38px;
+    height: 36px;
     object-fit: contain;
-    filter: drop-shadow(1px 1px 2px rgba(0,0,0,0.2));
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));
 }
 
 .header-subtitle {
-    font-size: 11px;
-    opacity: 0.90;
-    font-weight: 300;
-    letter-spacing: 0.5px;
+    font-size: 10px;
+    opacity: 0.85;
+    font-weight: 400;
+    letter-spacing: 1px;
+    text-transform: uppercase;
 }
 
 /* =========================================
@@ -66,17 +85,16 @@ button, input, select, textarea {
 .container {
     max-width: 480px;
     margin: 0 auto;
-    padding: 8px 15px 90px 15px; /* Reducido el padding superior inicial para evitar espacios vacíos */
+    padding: 12px 16px 95px 16px;
     position: relative;
     z-index: 1;
-    overflow: hidden;
 }
 
 .pestana-contenido {
     display: none;
     background-color: transparent;
     min-height: 85vh;
-    border-radius: 12px;
+    border-radius: var(--radius-lg);
     padding-bottom: 20px;
 }
 
@@ -84,162 +102,203 @@ button, input, select, textarea {
     display: block;
 }
 
-/* Animaciones de pestañas */
+/* Animaciones fluidas */
 .animar-adelante {
-    animation: deslizarDerecha 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+    animation: deslizarDerecha 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .animar-atras {
-    animation: deslizarIzquierda 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+    animation: deslizarIzquierda 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 @keyframes deslizarDerecha {
-    0% { opacity: 0; transform: translateX(30px); }
-    100% { opacity: 1; transform: translateX(0); }
+    0% { opacity: 0; transform: translateY(12px) scale(0.98); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 @keyframes deslizarIzquierda {
-    0% { opacity: 0; transform: translateX(-30px); }
-    100% { opacity: 1; transform: translateX(0); }
+    0% { opacity: 0; transform: translateY(-12px) scale(0.98); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 /* =========================================
    4. TARJETAS Y COMPONENTES
    ========================================= */
 .card {
-    background: white;
-    border-radius: 12px;
-    padding: 16px;
+    background: var(--card-bg);
+    border-radius: var(--radius-lg);
+    padding: 20px;
     margin-bottom: 16px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    box-shadow: var(--shadow-soft);
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .card h2 {
-    font-size: 16px;
-    font-weight: 500;
-    color: #0288d1;
-    margin-bottom: 15px;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--primary-dark);
+    margin-bottom: 16px;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
+    letter-spacing: -0.2px;
 }
 
 .card h2 .material-icons { 
     font-size: 20px; 
+    color: var(--primary);
+    background: var(--primary-light);
+    padding: 6px;
+    border-radius: var(--radius-sm);
 }
 
-/* Tarjeta de Balance (Ajustada con Flexbox para eliminar espacios extra) */
+/* Tarjeta de Balance Estilo Premium Gradiente */
 .balance-card {
-    background: linear-gradient(135deg, #00b0ff, #0091ea);
+    background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
     color: white;
     text-align: center;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    gap: 6px; /* Espaciado uniforme y controlado entre elementos */
-    padding: 16px;
-    margin-top: 4px; /* Pegado armónicamente al header */
-    margin-bottom: 16px;
+    gap: 8px;
+    padding: 24px 20px;
+    margin-top: 6px;
+    margin-bottom: 20px;
+    border-radius: var(--radius-lg);
+    box-shadow: 0 15px 30px -5px rgba(2, 132, 199, 0.3);
+    border: none;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Brillo decorativo sutil en la tarjeta de balance */
+.balance-card::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 60%);
+    pointer-events: none;
 }
 
 .balance-title { 
     font-size: 11px; 
     text-transform: uppercase; 
-    letter-spacing: 1px; 
-    opacity: 0.9; 
+    letter-spacing: 1.5px; 
+    opacity: 0.85; 
+    font-weight: 500;
     margin: 0;
 }
 
 #balance-total { 
-    font-size: 32px; 
-    font-weight: bold; 
+    font-size: 38px; 
+    font-weight: 800; 
     margin: 0; 
+    letter-spacing: -1px;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.1);
 }
 
-/* Contenedor del acumulado total para que colapse perfectamente si se oculta */
 #saldo-gran-total {
     font-size: 13px;
-    opacity: 0.95;
-    margin: 2px 0;
+    opacity: 0.9;
+    background: rgba(0, 0, 0, 0.15);
+    padding: 4px 12px;
+    border-radius: 20px;
+    margin: 4px 0;
+    font-weight: 500;
+    backdrop-filter: blur(4px);
 }
 
 /* =========================================
-   5. FORMULARIOS E INPUTS
+   5. FORMULARIOS E INPUTS MODERNOS
    ========================================= */
 .grupo-input { 
-    margin-bottom: 12px; 
+    margin-bottom: 14px; 
 }
 
 .grupo-input.row { 
     display: flex; 
-    gap: 10px; 
+    gap: 12px; 
 }
 
 .grupo-input input {
     width: 100%;
-    padding: 12px;
-    border: 1px solid #b3e5fc;
-    border-radius: 6px;
-    font-size: 14px;
+    padding: 14px 16px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: var(--radius-md);
+    font-size: 15px;
     outline: none;
-    background-color: #fafafa;
+    background-color: #f8fafc;
+    color: var(--text-main);
+    transition: all 0.2s ease;
 }
 
 .grupo-input input:focus { 
-    border-color: #0288d1; 
+    border-color: var(--primary); 
     background-color: #fff; 
+    box-shadow: 0 0 0 4px rgba(2, 132, 199, 0.1);
 }
 
 /* =========================================
-   6. BOTONES
+   6. BOTONES ESTILO 3D SUAVE / ELEVADOS
    ========================================= */
 .btn-material {
-    background-color: #0288d1;
+    background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
     color: white;
     border: none;
-    padding: 12px;
+    padding: 14px 20px;
     width: 100%;
-    border-radius: 6px;
+    border-radius: var(--radius-md);
     font-size: 14px;
-    font-weight: 500;
+    font-weight: 600;
     text-transform: uppercase;
+    letter-spacing: 0.5px;
     cursor: pointer;
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 5px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    gap: 8px;
+    box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25);
+    transition: transform 0.1s ease, box-shadow 0.1s ease;
 }
 
 .btn-material:active { 
-    background-color: #01579b; 
+    transform: scale(0.98);
+    box-shadow: 0 2px 6px rgba(2, 132, 199, 0.2);
 }
 
 .btn-venta {
-    background-color: #26a69a;
-    padding: 8px 12px;
+    background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
+    padding: 10px 16px;
     font-size: 12px;
     width: auto;
+    border-radius: var(--radius-sm);
+    box-shadow: 0 4px 10px rgba(20, 184, 166, 0.25);
 }
 
 .btn-venta:active { 
-    background-color: #00695c; 
+    transform: scale(0.96);
 }
 
 .btn-eliminar {
-    background-color: #ef5350;
-    padding: 8px;
+    background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%);
+    padding: 10px;
     width: auto;
-    min-width: 40px;
+    min-width: 42px;
+    border-radius: var(--radius-sm);
+    box-shadow: 0 4px 10px rgba(244, 63, 94, 0.25);
 }
 
 .btn-eliminar:active { 
-    background-color: #c62828; 
+    transform: scale(0.95);
 }
 
 .btn-deshacer {
-    color: #ef5350;
+    color: #f43f5e;
     background: none;
     border: none;
     cursor: pointer;
@@ -249,14 +308,15 @@ button, input, select, textarea {
 }
 
 /* =========================================
-   7. LISTAS E ITEMS
+   7. LISTAS E ITEMS DE PRODUCTOS
    ========================================= */
 .item-fila {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 12px 0;
-    border-bottom: 1px solid #e1f5fe;
+    padding: 14px 0;
+    border-bottom: 1px solid #f1f5f9;
+    transition: background 0.2s ease;
 }
 
 .item-fila:last-child { 
@@ -264,41 +324,42 @@ button, input, select, textarea {
 }
 
 .item-info .nombre { 
-    font-weight: 500; 
+    font-weight: 600; 
     font-size: 15px; 
-    color: #37474f; 
+    color: var(--text-main); 
 }
 
 .item-info .meta { 
     font-size: 12px; 
-    color: #78909c; 
-    margin-top: 2px; 
+    color: var(--text-muted); 
+    margin-top: 3px; 
 }
 
 .badge-stock {
-    background-color: #e1f5fe;
-    color: #0288d1;
-    padding: 2px 6px;
-    border-radius: 4px;
+    background-color: var(--primary-light);
+    color: var(--primary-dark);
+    padding: 4px 10px;
+    border-radius: 20px;
     font-size: 11px;
-    font-weight: bold;
+    font-weight: 700;
 }
 
 .badge-stock.agotado { 
-    background-color: #ffebee; 
-    color: #c62828; 
+    background-color: #fee2e2; 
+    color: #991b1b; 
 }
 
 .factura-item {
-    padding: 10px 0;
-    border-bottom: 1px dashed #b3e5fc;
+    padding: 12px 0;
+    border-bottom: 1px dashed #cbd5e1;
     font-size: 13px;
-    color: #37474f;
+    color: var(--text-main);
 }
 
 .factura-item span { 
-    color: #78909c; 
+    color: var(--text-muted); 
     float: right; 
+    font-weight: 500;
 }
 
 /* =========================================
@@ -310,62 +371,70 @@ button, input, select, textarea {
 }
 
 .qr-imagen { 
-    max-width: 280px;
+    max-width: 260px;
     width: 100%; 
-    border: 3px solid #0288d1; 
-    border-radius: 12px; 
+    border: 4px solid #fff; 
+    border-radius: var(--radius-lg); 
     margin: 20px 0;
     background-color: #fff; 
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    box-shadow: 0 15px 35px rgba(0,0,0,0.1);
 }
 
 .qr-instrucciones { 
     font-size: 13px; 
-    color: #546e7a; 
-    line-height: 1.4; 
+    color: var(--text-muted); 
+    line-height: 1.5; 
 }
 
 /* =========================================
-   9. DOCK INFERIOR (NAVEGACIÓN FIJA)
+   9. DOCK INFERIOR (NAVEGACIÓN FLOTANTE MODERNA)
    ========================================= */
 .dock-inferior {
     position: fixed !important;
     bottom: 0 !important;
     left: 0 !important;
     right: 0 !important;
-    height: 65px !important;
-    background-color: white !important;
+    height: 72px !important;
+    background: rgba(255, 255, 255, 0.92) !important;
+    backdrop-filter: blur(16px) !important;
+    -webkit-backdrop-filter: blur(16px) !important;
     display: flex !important;
     flex-direction: row !important;
     justify-content: space-around !important;
     align-items: center !important;
-    box-shadow: 0 -3px 10px rgba(0,0,0,0.08) !important;
+    box-shadow: 0 -10px 30px rgba(15, 23, 42, 0.08) !important;
     z-index: 99999 !important;
+    border-top: 1px solid rgba(226, 232, 240, 0.8) !important;
 }
 
 .dock-item {
     background: none !important;
     border: none !important;
-    color: #78909c !important;
+    color: var(--text-muted) !important;
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
     justify-content: center !important;
     font-size: 11px !important;
-    font-weight: 500 !important;
+    font-weight: 600 !important;
     cursor: pointer !important;
     width: 100% !important;
     height: 100% !important;
-    gap: 3px !important;
-    transition: color 0.2s ease;
+    gap: 4px !important;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
 .dock-item .material-icons {
-    font-size: 24px !important;
+    font-size: 22px !important;
+    transition: transform 0.25s ease;
 }
 
 .dock-item.activo {
-    color: #0288d1 !important;
+    color: var(--primary) !important;
+}
+
+.dock-item.activo .material-icons {
+    transform: translateY(-2px);
 }
 
 /* =========================================
@@ -377,9 +446,9 @@ button, input, select, textarea {
     cursor: pointer;
 }
 
-.nube-sincronizada { color: #4caf50 !important; }
-.nube-cargando { color: #ffeb3b !important; animation: parpadeoNube 1s infinite alternate; }
-.nube-error { color: #ff5252 !important; }
+.nube-sincronizada { color: #22c55e !important; }
+.nube-cargando { color: #eab308 !important; animation: parpadeoNube 1s infinite alternate; }
+.nube-error { color: #ef4444 !important; }
 
 @keyframes parpadeoNube {
     from { opacity: 0.4; }
@@ -387,7 +456,7 @@ button, input, select, textarea {
 }
 
 /* =========================================
-   11. PANTALLA DE CARGA (SPLASH SCREEN)
+   11. PANTALLA DE CARGA (SPLASH SCREEN PREMIUM)
    ========================================= */
 #splash-screen {
     position: fixed;
@@ -395,7 +464,7 @@ button, input, select, textarea {
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: #0288d1;
+    background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -411,7 +480,7 @@ button, input, select, textarea {
 }
 
 .logo-animado-container {
-    width: 250px;
+    width: 240px;
     overflow: hidden;
 }
 
@@ -429,15 +498,16 @@ button, input, select, textarea {
 
 .splash-sub {
     margin-top: 15px;
-    font-size: 14px;
+    font-size: 13px;
     color: white;
-    letter-spacing: 1px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
     opacity: 0;
     animation: aparecerTexto 0.8s ease 1.2s forwards;
 }
 
 @keyframes aparecerTexto {
-    to { opacity: 0.95; }
+    to { opacity: 0.9; }
 }
 
 .ocultar-splash {
@@ -446,16 +516,16 @@ button, input, select, textarea {
 }
 
 /* =========================================
-   12. UX, TACTIL Y ACCESIBILIDAD MÓVIL
+   12. ACCESIBILIDAD MÓVIL Y TOASTS
    ========================================= */
-button, .btn-material, .dock-item, .item-fila, #balance-total {
+button, .btn-material, .dock-item, .item-fila {
     min-height: 48px;
     touch-action: manipulation;
 }
 
 @keyframes toque-pulse {
     0% { transform: scale(1); }
-    50% { transform: scale(0.94); }
+    50% { transform: scale(0.96); }
     100% { transform: scale(1); }
 }
 
@@ -463,12 +533,9 @@ button, .btn-material, .dock-item, .item-fila, #balance-total {
     animation: toque-pulse 0.15s ease-in-out;
 }
 
-/* =========================================
-   13. SISTEMA DE TOASTS FLOTANTES
-   ========================================= */
 #toast-container {
     position: fixed;
-    bottom: 80px;
+    bottom: 85px;
     left: 50%;
     transform: translateX(-50%);
     z-index: 99999;
@@ -481,13 +548,13 @@ button, .btn-material, .dock-item, .item-fila, #balance-total {
 }
 
 .toast {
-    background: #263238;
+    background: #1e293b;
     color: #ffffff;
     padding: 14px 18px;
-    border-radius: 12px;
+    border-radius: var(--radius-md);
     font-size: 14px;
     font-weight: 500;
-    box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
     display: flex;
     align-items: center;
     gap: 12px;
@@ -495,7 +562,7 @@ button, .btn-material, .dock-item, .item-fila, #balance-total {
     transform: translateY(20px);
     transition: opacity 0.25s ease, transform 0.25s ease;
     pointer-events: auto;
-    border: 1px solid rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.08);
 }
 
 .toast.mostrar {
@@ -503,7 +570,7 @@ button, .btn-material, .dock-item, .item-fila, #balance-total {
     transform: translateY(0);
 }
 
-.toast.éxito { background: #1b5e20; border-left: 6px solid #a5d6a7; }
-.toast.error { background: #b71c1c; border-left: 6px solid #ef9a9a; }
-.toast.info  { background: #01579b; border-left: 6px solid #81d4fa; }
-.toast.alerta { background: #e65100; border-left: 6px solid #ffe082; }
+.toast.éxito { background: #166534; border-left: 5px solid #4ade80; }
+.toast.error { background: #991b1b; border-left: 5px solid #f87171; }
+.toast.info  { background: #0369a1; border-left: 5px solid #38bdf8; }
+.toast.alerta { background: #9a3412; border-left: 5px solid #fb923c; }
