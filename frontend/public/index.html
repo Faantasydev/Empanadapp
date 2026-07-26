@@ -81,13 +81,22 @@
                 </div>
             </div>
 
-            <!-- Sección Registrar Venta -->
-            <div class="section-header">
-                <h2 data-testid="titulo-registrar-venta">Registrar Venta</h2>
-                <span class="section-sub">Selecciona productos</span>
+            <!-- Sección Registrar Venta (Acordeón desplegable) -->
+            <div class="accordion-section open" id="acc-ventas">
+                <button type="button" class="accordion-toggle" onclick="toggleAccordion('acc-ventas')" data-testid="btn-toggle-ventas">
+                    <span class="accordion-toggle-left">
+                        <span class="material-icons-round">shopping_basket</span>
+                        <span>
+                            <span class="accordion-title">Registrar Venta</span>
+                            <span class="accordion-subtitle" id="ventas-summary">Selecciona productos</span>
+                        </span>
+                    </span>
+                    <span class="material-icons-round accordion-arrow">expand_more</span>
+                </button>
+                <div class="accordion-content">
+                    <div id="lista-ventas-disponibles" class="product-grid" data-testid="lista-ventas"></div>
+                </div>
             </div>
-
-            <div id="lista-ventas-disponibles" class="product-grid" data-testid="lista-ventas"></div>
 
             <!-- Carrito flotante -->
             <div id="seccion-carrito" class="cart-card" data-testid="seccion-carrito" style="display:none;">
@@ -142,15 +151,26 @@
                 </div>
             </div>
 
-            <div class="section-header" style="margin-top:24px;">
-                <h2>Inventario</h2>
-                <span class="section-sub">Márgenes de ganancia</span>
+            <!-- Inventario con acordeón desplegable -->
+            <div class="accordion-section open" id="acc-inventario" style="margin-top:24px;">
+                <button type="button" class="accordion-toggle" onclick="toggleAccordion('acc-inventario')" data-testid="btn-toggle-inventario">
+                    <span class="accordion-toggle-left">
+                        <span class="material-icons-round">inventory_2</span>
+                        <span>
+                            <span class="accordion-title">Inventario</span>
+                            <span class="accordion-subtitle" id="inventario-summary">Márgenes de ganancia</span>
+                        </span>
+                    </span>
+                    <span class="material-icons-round accordion-arrow">expand_more</span>
+                </button>
+                <div class="accordion-content">
+                    <div id="lista-inventario-completo" class="product-grid" data-testid="lista-inventario"></div>
+                </div>
             </div>
-            <div id="lista-inventario-completo" class="product-grid" data-testid="lista-inventario"></div>
 
             <!-- ============ GASTOS E INVERSIONES (Accordion desplegable) ============ -->
-            <div class="accordion-section" data-testid="accordion-gastos">
-                <button type="button" class="accordion-toggle" onclick="toggleAccordionGastos()" data-testid="btn-toggle-gastos">
+            <div class="accordion-section" id="acc-gastos" data-testid="accordion-gastos">
+                <button type="button" class="accordion-toggle" onclick="toggleAccordion('acc-gastos')" data-testid="btn-toggle-gastos">
                     <span class="accordion-toggle-left">
                         <span class="material-icons-round">savings</span>
                         <span>
@@ -226,6 +246,18 @@
                 <span class="deuda-label">Deuda Total Acumulada</span>
                 <div id="deuda-total-monto" class="deuda-monto" data-testid="deuda-total">$0</div>
                 <div class="deuda-count" id="deuda-count-text">0 personas fiadas</div>
+            </div>
+
+            <!-- Gráfico circular Top Deudores -->
+            <div id="chart-deudores-wrap" class="chart-wrap" style="display:none;">
+                <div class="chart-header">
+                    <span class="material-icons-round">groups</span>
+                    <span>Top personas que más deben</span>
+                </div>
+                <div id="chart-deudores-inner" class="chart-inner" data-testid="chart-deudores">
+                    <canvas id="chart-deudores-canvas"></canvas>
+                    <div id="chart-deudores-legend" class="chart-legend"></div>
+                </div>
             </div>
 
             <!-- Form nuevo deudor -->

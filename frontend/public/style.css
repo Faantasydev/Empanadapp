@@ -1145,6 +1145,11 @@ button, input, select, textarea {
     transform: scale(1.05) !important;
 }
 
+/* En modo VENDEDOR (Inventario+Insumos ocultos), reordenar para que Ventas quede al centro visual */
+body.rol-vendedor [data-testid="dock-deudores"] { order: 1; }
+body.rol-vendedor [data-testid="dock-ventas"]   { order: 2; }
+body.rol-vendedor [data-testid="dock-qr"]        { order: 3; }
+
 /* ============ 14. CLOUD ICON STATES ============ */
 #icono-nube { transition: color 0.3s ease; font-size: 20px; }
 
@@ -1887,7 +1892,8 @@ button, .btn-primary, .dock-item, .product-card {
     min-height: 150px;
 }
 
-#chart-productos-canvas {
+#chart-productos-canvas,
+#chart-deudores-canvas {
     width: 140px !important;
     height: 140px !important;
     flex-shrink: 0;

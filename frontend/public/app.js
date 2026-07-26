@@ -46,6 +46,7 @@ let gastos = JSON.parse(localStorage.getItem('zampa_gastos')) || [];
 let carrito = [];
 let nubeLista = false;
 let chartProductos = null; // instancia Chart.js
+let chartDeudores = null;
 
 // Utilidad: formatea número a moneda COP corta ($1.234)
 function fmtMoney(n) {
@@ -356,12 +357,29 @@ function actualizarPantalla() {
 
     // ------- Deudores -------
     renderDeudores();
+    renderChartTopDeudores();
 
     // ------- Gastos e Inversiones (solo admin ve el accordion) -------
     renderGastos();
-    const accordionGastos = document.querySelector('.accordion-section');
+    const accordionGastos = document.getElementById('acc-gastos');
     if (accordionGastos) {
         accordionGastos.style.display = (rolActual === 'admin') ? 'block' : 'none';
+    }
+
+    // ------- Contadores dinámicos de accordions -------
+    const nProds = inventario.length;
+    const stockTotal = inventario.reduce((s, p) => s + (parseInt(p.stock) || 0), 0);
+    const ventasSummary = document.getElementById('ventas-summary');
+    if (ventasSummary) {
+        ventasSummary.textContent = nProds === 0
+            ? 'No hay productos disponibles'
+            : `${nProds} ${nProds === 1 ? 'producto' : 'productos'} · ${stockTotal} en stock`;
+    }
+    const invSummary = document.getElementById('inventario-summary');
+    if (invSummary) {
+        invSummary.textContent = nProds === 0
+            ? 'Sin productos registrados'
+            : `${nProds} ${nProds === 1 ? 'producto' : 'productos'} registrados`;
     }
 }
 
@@ -870,6 +888,10 @@ function aplicarPermisosRol() {
     const esAdmin = (rolActual === 'admin');
     const iconoRol = document.getElementById('icono-rol');
 
+    // Clase en body: para reordenar dock según rol
+    document.body.classList.toggle('rol-admin', esAdmin);
+    document.body.classList.toggle('rol-vendedor', !esAdmin);
+
     if (iconoRol) {
         const inner = iconoRol.querySelector('.material-icons-round') || iconoRol;
         inner.innerText = esAdmin ? 'admin_panel_settings' : 'badge';
@@ -1150,11 +1172,87 @@ function borrarDeudorAdmin(id) {
 }
 
 // ========================================================
+// 📊 GRÁFICO CIRCULAR: TOP 5 DEUDORES (Quién debe más)
+// ========================================================
+function renderChartTopDeudores() {
+    const wrap = document.getElementById('chart-deudores-wrap');
+    const canvasEl = document.getElementById('chart-deudores-canvas');
+    const legendEl = document.getElementById('chart-deudores-legend');
+    if (!wrap || !canvasEl) return;
+
+    // Solo mostrar si hay al menos 2 deudores
+    if (deudores.length < 2 || typeof Chart === 'undefined') {
+        wrap.style.display = 'none';
+        if (chartDeudores) { try { chartDeudores.destroy(); } catch (e) {} chartDeudores = null; }
+        return;
+    }
+
+    wrap.style.display = 'block';
+
+    // Top 5 deudores por monto
+    const top = [...deudores]
+        .sort((a, b) => (parseFloat(b.monto) || 0) - (parseFloat(a.monto) || 0))
+        .slice(0, 5);
+
+    const paleta = ['#FF3B30', '#FF9F0A', '#C9A44C', '#8E8E93', '#34C759'];
+    const labels = top.map(d => d.nombre);
+    const values = top.map(d => parseFloat(d.monto) || 0);
+    const totalTop = values.reduce((a, b) => a + b, 0);
+
+    if (chartDeudores) { try { chartDeudores.destroy(); } catch (e) {} chartDeudores = null; }
+
+    const isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+    chartDeudores = new Chart(canvasEl, {
+        type: 'doughnut',
+        data: {
+            labels,
+            datasets: [{
+                data: values,
+                backgroundColor: paleta.slice(0, values.length),
+                borderColor: isDark ? '#1C1C1E' : '#FFFFFF',
+                borderWidth: 2,
+                hoverOffset: 6
+            }]
+        },
+        options: {
+            responsive: false,
+            cutout: '62%',
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: (ctx) => `${ctx.label}: ${fmtMoney(ctx.parsed)}`
+                    }
+                }
+            },
+            animation: { animateRotate: true, duration: 700 }
+        }
+    });
+
+    if (legendEl) {
+        legendEl.innerHTML = top.map((d, i) => {
+            const pct = totalTop > 0 ? Math.round((d.monto / totalTop) * 100) : 0;
+            return `
+                <div class="legend-row">
+                    <span class="legend-swatch" style="background:${paleta[i]}"></span>
+                    <span class="legend-name">${esc(d.nombre)}</span>
+                    <span class="legend-count">${fmtMoney(d.monto)} · ${pct}%</span>
+                </div>`;
+        }).join('');
+    }
+}
+
+// ========================================================
 // 💼 GASTOS E INVERSIONES (Accordion en Inventario, solo admin)
 // ========================================================
 function toggleAccordionGastos() {
+    toggleAccordion('acc-gastos');
+}
+
+function toggleAccordion(id) {
     vibrar(15);
-    const section = document.querySelector('.accordion-section');
+    const section = document.getElementById(id);
     if (!section) return;
     section.classList.toggle('open');
 }
