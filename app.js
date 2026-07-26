@@ -44,6 +44,11 @@ let historicoAcumulado = JSON.parse(localStorage.getItem('empanadas_historico_ge
 let carrito = [];
 let nubeLista = false; 
 
+// Renderizado inicial inmediato con memoria local para evitar parpadeos
+document.addEventListener("DOMContentLoaded", () => {
+    actualizarPantalla();
+});
+
 // ========================================================
 // ☁️ SINCRONIZACIÓN EN TIEMPO REAL CON FIREBASE
 // ========================================================
@@ -51,10 +56,11 @@ db.ref('empanada_control/').on('value', (snapshot) => {
     const data = snapshot.val();
     
     if (data) {
-        inventario = data.inventario || [];
-        insumos = data.insumos || [];
-        balance = data.balance !== undefined ? data.balance : 0;
-        historial = data.historial || [];
+        // Solo sobreescribimos si Firebase tiene datos válidos, protegiendo arrays locales
+        if (data.inventario && Array.isArray(data.inventario)) inventario = data.inventario;
+        if (data.insumos && Array.isArray(data.insumos)) insumos = data.insumos;
+        if (data.balance !== undefined) balance = data.balance;
+        if (data.historial && Array.isArray(data.historial)) historial = data.historial;
         
         if (data.historicoAcumulado && Array.isArray(data.historicoAcumulado)) {
             historicoAcumulado = data.historicoAcumulado;
@@ -380,10 +386,8 @@ function limpiarCarrito() { carrito = []; guardarEnMemoria(); actualizarPantalla
 function ejecutarTransaccionVenta(detalleVenta, totalVenta, actualizarStockCallback) {
     const hora = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     
-    // Ejecutar lógica de stock local
     actualizarStockCallback();
 
-    // Estructura del registro
     const transaccion = {
         productoId: 'venta_pos',
         detalle: detalleVenta,
@@ -394,7 +398,6 @@ function ejecutarTransaccionVenta(detalleVenta, totalVenta, actualizarStockCallb
     balance += totalVenta;
     historial.unshift(transaccion);
 
-    // Si no hay red, guardar en la cola offline local
     if (!navigator.onLine) {
         guardarVentaOffline(transaccion);
         mostrarToast("📴 Venta guardada localmente (Sin red). Se sincronizará al volver la señal.", "alerta", 4000);
@@ -527,8 +530,6 @@ function cerrarCaja() {
 }
 
 function verificarCierreDeDia() {
-    if (!nubeLista) return;
-
     const ahora = new Date();
     const hoyStr = ahora.toLocaleDateString('es-CO');
     let ultimaFechaControl = localStorage.getItem('empanadas_fecha_control');
@@ -827,9 +828,6 @@ function sincronizarColaPendiente() {
     let cola = JSON.parse(localStorage.getItem('zampa_cola_offline')) || [];
     if (cola.length === 0) return; 
 
-    console.log(`Sincronizando ${cola.length} ventas pendientes con Firebase...`);
-
-    // Las ventas ya están inyectadas localmente, simplemente forzamos guardado completo en Firebase
     guardarEnMemoria();
 
     localStorage.removeItem('zampa_cola_offline');
