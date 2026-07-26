@@ -13,7 +13,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 splashScreen.classList.add("ocultar-splash");
                 setTimeout(() => splashScreen.remove(), 500);
             }
-        }, 2500); 
+        }, 2200);
     }
 });
 
@@ -42,7 +42,20 @@ let balance = parseFloat(localStorage.getItem('empanadas_balance')) || 0;
 let historial = JSON.parse(localStorage.getItem('empanadas_historial')) || [];
 let historicoAcumulado = JSON.parse(localStorage.getItem('empanadas_historico_general')) || [];
 let carrito = [];
-let nubeLista = false; 
+let nubeLista = false;
+
+// Utilidad: formatea número a moneda COP corta ($1.234)
+function fmtMoney(n) {
+    const v = Number(n || 0);
+    return '$' + v.toLocaleString('es-CO');
+}
+
+// Utilidad: escapa HTML para nombres de productos
+function esc(str) {
+    return String(str).replace(/[&<>"']/g, m => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[m]));
+}
 
 // Renderizado inicial inmediato con memoria local para evitar parpadeos
 document.addEventListener("DOMContentLoaded", () => {
@@ -54,30 +67,29 @@ document.addEventListener("DOMContentLoaded", () => {
 // ========================================================
 db.ref('empanada_control/').on('value', (snapshot) => {
     const data = snapshot.val();
-    
+
     if (data) {
-        // Solo sobreescribimos si Firebase tiene datos válidos, protegiendo arrays locales
         if (data.inventario && Array.isArray(data.inventario)) inventario = data.inventario;
         if (data.insumos && Array.isArray(data.insumos)) insumos = data.insumos;
         if (data.balance !== undefined) balance = data.balance;
         if (data.historial && Array.isArray(data.historial)) historial = data.historial;
-        
+
         if (data.historicoAcumulado && Array.isArray(data.historicoAcumulado)) {
             historicoAcumulado = data.historicoAcumulado;
             localStorage.setItem('empanadas_historico_general', JSON.stringify(historicoAcumulado));
         }
     }
-    
+
     nubeLista = true;
     actualizarPantalla();
 }, (error) => {
     console.error("Error conectando a Firebase en tiempo real:", error);
-    nubeLista = true; // Permite operar localmente si Firebase tarda en responder
+    nubeLista = true;
     actualizarPantalla();
 });
 
 // ========================================================
-// 🔄 FUNCIONES DE GUARDADO Y PANTALLA UNIFICADAS
+// 🔄 GUARDADO Y RENDER PRINCIPAL
 // ========================================================
 function guardarEnMemoria() {
     localStorage.setItem('empanadas_inventario', JSON.stringify(inventario));
@@ -88,159 +100,247 @@ function guardarEnMemoria() {
 
     const nube = document.getElementById('icono-nube');
     if (nube) {
-        nube.className = "material-icons nube-cargando";
-        nube.innerText = "cloud_upload"; 
+        nube.className = "material-icons-round nube-cargando";
+        nube.innerText = "cloud_upload";
     }
 
     if (!nubeLista) return;
 
     db.ref('empanada_control/').set({
-        inventario: inventario,
-        insumos: insumos,
-        balance: balance,
-        historial: historial,
-        historicoAcumulado: historicoAcumulado
+        inventario, insumos, balance, historial, historicoAcumulado
     }, (error) => {
         if (error) {
             if (nube) {
-                nube.className = "material-icons nube-error";
+                nube.className = "material-icons-round nube-error";
                 nube.innerText = "cloud_off";
             }
         } else {
             if (nube) {
                 setTimeout(() => {
-                    nube.className = "material-icons nube-sincronizada";
+                    nube.className = "material-icons-round nube-sincronizada";
                     nube.innerText = "cloud_done";
-                }, 500); 
+                }, 500);
             }
         }
     });
 }
 
 function actualizarPantalla() {
-    // 1. Aplicar reglas visuales de roles (Admin vs Vendedor Ambulante)
     aplicarPermisosRol();
 
+    // ------- Balance principal -------
     const elemBalance = document.getElementById('balance-total');
-    if (elemBalance) elemBalance.innerHTML = `$${balance.toLocaleString('es-CO')}`;
-    
+    if (elemBalance) elemBalance.innerHTML = fmtMoney(balance);
+
     let dineroDiasAnteriores = 0;
     if (Array.isArray(historicoAcumulado)) {
         dineroDiasAnteriores = historicoAcumulado.reduce((sum, dia) => sum + (parseFloat(dia.balanceFinal) || 0), 0);
     }
     let saldoGranTotal = dineroDiasAnteriores + balance;
-    
+
     const divGranTotal = document.getElementById('saldo-gran-total');
     if (divGranTotal) {
-        divGranTotal.innerHTML = `Acumulado Total: <span style="text-decoration: underline; cursor: pointer; color: #ffeb3b;" onclick="editarAcumuladoTotal(event)">$${saldoGranTotal.toLocaleString('es-CO')}</span>`;
+        divGranTotal.innerHTML = `Acumulado Total: <span onclick="editarAcumuladoTotal(event)" data-testid="acumulado-editable">${fmtMoney(saldoGranTotal)}</span>`;
     }
 
+    // ------- Lista de Ventas (Productos como tarjetas iOS) -------
     const divVentas = document.getElementById('lista-ventas-disponibles');
     if (divVentas) {
-        divVentas.innerHTML = inventario.length === 0 ? '<p style="color:#757575;">No hay productos en inventario</p>' : '';
-        inventario.forEach(prod => {
-            divVentas.innerHTML += `
-                <div class="item-fila">
-                    <div class="item-info">
-                        <div class="nombre">${prod.nombre}</div>
-                        <div class="meta">${prod.precio.toLocaleString()} | Stock: ${prod.stock}</div>
-                    </div>
-                    <button class="btn-material btn-venta" onclick="agregarAlCarrito(${prod.id})">Agregar</button>
+        if (inventario.length === 0) {
+            divVentas.innerHTML = `
+                <div class="empty-state" data-testid="empty-ventas">
+                    <span class="material-icons-round">shopping_basket</span>
+                    No hay productos en inventario aún.
                 </div>`;
-        });
+        } else {
+            divVentas.innerHTML = inventario.map(prod => {
+                const qtyEnCarrito = carrito.filter(p => p.id === prod.id).length;
+                const stockActual = prod.stock;
+                const badgeClass = stockActual === 0 ? 'agotado' : (stockActual <= 5 ? 'bajo' : '');
+                const stockText = stockActual === 0 ? 'Agotado' : `${stockActual} disp.`;
+
+                const controlHtml = qtyEnCarrito > 0
+                    ? `<div class="stepper" data-testid="stepper-${prod.id}">
+                          <button onclick="event.stopPropagation(); quitarDelCarrito(${prod.id})" data-testid="btn-menos-${prod.id}">−</button>
+                          <span class="qty" data-testid="qty-${prod.id}">${qtyEnCarrito}</span>
+                          <button onclick="event.stopPropagation(); agregarAlCarrito(${prod.id})" data-testid="btn-mas-${prod.id}" ${qtyEnCarrito >= stockActual ? 'disabled style="opacity:.35;pointer-events:none;"' : ''}>+</button>
+                       </div>`
+                    : `<button class="btn-add ${stockActual === 0 ? 'disabled' : ''}" onclick="event.stopPropagation(); agregarAlCarrito(${prod.id})" data-testid="btn-agregar-${prod.id}" ${stockActual === 0 ? 'disabled' : ''}>
+                          <span class="material-icons-round" style="font-size:15px;">add</span> Agregar
+                       </button>`;
+
+                return `
+                <div class="product-card" data-testid="product-card-${prod.id}">
+                    <div class="product-info">
+                        <span class="product-name">${esc(prod.nombre)}</span>
+                        <span class="product-price">${fmtMoney(prod.precio)}</span>
+                        <div class="product-meta-row">
+                            <span class="badge-stock ${badgeClass}" data-testid="badge-stock-${prod.id}">
+                                <span class="material-icons-round">inventory_2</span> ${stockText}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="product-actions">
+                        ${controlHtml}
+                    </div>
+                </div>`;
+            }).join('');
+        }
     }
 
+    // ------- Carrito -------
     const divCarrito = document.getElementById('seccion-carrito');
     const divListaCarrito = document.getElementById('lista-carrito');
-    
+
     if (divCarrito && divListaCarrito) {
         if (carrito.length > 0) {
             divCarrito.style.display = 'block';
-            divListaCarrito.innerHTML = carrito.map(p => `
-                <div style="display:flex; justify-content:space-between; font-size:14px; margin-bottom:4px;">
-                    <span>• 1x ${p.nombre}</span>
-                    <span style="font-weight:bold; margin-left:auto;">${p.precio.toLocaleString()}</span>
+            // Agrupar por producto
+            const conteo = {};
+            carrito.forEach(p => {
+                if (!conteo[p.id]) conteo[p.id] = { nombre: p.nombre, precio: p.precio, cant: 0 };
+                conteo[p.id].cant += 1;
+            });
+            divListaCarrito.innerHTML = Object.values(conteo).map(p => `
+                <div class="cart-row">
+                    <span><span class="qty">${p.cant}×</span>${esc(p.nombre)}</span>
+                    <span class="price">${fmtMoney(p.precio * p.cant)}</span>
                 </div>
             `).join('');
-            
+
             let totalCarrito = carrito.reduce((sum, p) => sum + p.precio, 0);
             const totalCarritoElem = document.getElementById('total-carrito');
-            if (totalCarritoElem) totalCarritoElem.innerText = '$' + totalCarrito.toLocaleString();
+            if (totalCarritoElem) totalCarritoElem.innerText = fmtMoney(totalCarrito);
         } else {
             divCarrito.style.display = 'none';
         }
     }
 
+    // ------- Receta / insumos selección (form nuevo producto) -------
     const divRecetaSelec = document.getElementById('receta-insumos-seleccion');
     if (divRecetaSelec) {
         if (insumos.length === 0) {
-            divRecetaSelec.innerHTML = '<p style="font-size: 12px; color:#757575;">Registra tus insumos primero en la pestaña "Insumos".</p>';
+            divRecetaSelec.innerHTML = '<p>Registra tus insumos primero en la pestaña "Insumos" para calcular la ganancia real.</p>';
         } else {
-            divRecetaSelec.innerHTML = '<p style="font-size: 11px; font-weight:bold; margin-bottom:5px; color:#555;">¿Qué gasta 1 sola empanada?:</p>';
-            insumos.forEach(ins => {
-                divRecetaSelec.innerHTML += `
-                    <div style="display:flex; align-items:center; gap:10px; margin-bottom:5px; font-size:13px;">
-                        <input type="checkbox" id="check-insumo-${ins.id}">
-                        <span style="flex:1;">${ins.nombre}</span>
-                        <input type="number" id="cant-insumo-${ins.id}" placeholder="¿Cuánto?" style="width:90px; padding:4px; border:1px solid #ccc; border-radius:4px; font-size:12px;">
-                    </div>`;
-            });
+            divRecetaSelec.innerHTML = '<p style="margin-bottom:6px; font-weight:600; color:var(--text-secondary);">¿Qué gasta 1 unidad?</p>' +
+                insumos.map(ins => `
+                    <div class="receta-row">
+                        <input type="checkbox" id="check-insumo-${ins.id}" data-testid="check-insumo-${ins.id}">
+                        <label for="check-insumo-${ins.id}" style="flex:1; cursor:pointer;">${esc(ins.nombre)}</label>
+                        <input type="number" id="cant-insumo-${ins.id}" placeholder="¿Cuánto?" data-testid="cant-insumo-${ins.id}">
+                    </div>
+                `).join('');
         }
     }
 
+    // ------- Inventario completo (tarjetas con métricas) -------
     const divInventario = document.getElementById('lista-inventario-completo');
-    if(divInventario) {
-        divInventario.innerHTML = '';
-        inventario.forEach(prod => {
-            const costo = prod.costoProduccion || 0;
-            const ganancia = prod.ganancia || prod.precio;
-            const porcentaje = prod.precio > 0 ? ((ganancia / prod.precio) * 100).toFixed(0) : 0;
-            divInventario.innerHTML += `
-                <div class="item-fila" style="background: #fafafa; margin-bottom: 12px; padding: 12px; border-radius: 8px; border: 1px solid #e0e0e0;">
-                    <div style="margin-bottom: 8px;">
-                        <span style="font-weight: bold; font-size: 15px; color: #0288d1; display: block; margin-bottom: 4px;">${prod.nombre}</span>
-                        <span style="font-size: 14px; font-weight: bold; color: #333; display: flex; align-items: center; gap: 6px;">
-                            Stock: ${prod.stock}
-                            <span class="material-icons" style="font-size: 18px; cursor: pointer; color: #4caf50; vertical-align: middle;" onclick="editarStockProducto(${prod.id})">edit</span>
-                        </span>
+    if (divInventario) {
+        if (inventario.length === 0) {
+            divInventario.innerHTML = `
+                <div class="empty-state" data-testid="empty-inventario">
+                    <span class="material-icons-round">inventory</span>
+                    Sin productos registrados.
+                </div>`;
+        } else {
+            divInventario.innerHTML = inventario.map(prod => {
+                const costo = prod.costoProduccion || 0;
+                const ganancia = (prod.ganancia !== undefined ? prod.ganancia : prod.precio) || 0;
+                const porcentaje = prod.precio > 0 ? ((ganancia / prod.precio) * 100).toFixed(0) : 0;
+                const stockActual = prod.stock;
+                const badgeClass = stockActual === 0 ? 'agotado' : (stockActual <= 5 ? 'bajo' : '');
+                const stockText = stockActual === 0 ? 'Agotado' : `${stockActual} disp.`;
+
+                return `
+                <div class="product-card inv-card" data-testid="inv-card-${prod.id}">
+                    <div class="inv-header">
+                        <div class="product-info">
+                            <span class="product-name">${esc(prod.nombre)}</span>
+                            <div class="product-meta-row">
+                                <span class="badge-stock ${badgeClass}">
+                                    <span class="material-icons-round">inventory_2</span> ${stockText}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="product-actions">
+                            <button class="icon-btn success" onclick="editarStockProducto(${prod.id})" title="Editar stock" data-testid="btn-edit-stock-${prod.id}">
+                                <span class="material-icons-round">edit</span>
+                            </button>
+                            <button class="icon-btn danger" onclick="eliminarProducto(${prod.id})" title="Eliminar" data-testid="btn-eliminar-inv-${prod.id}">
+                                <span class="material-icons-round">delete</span>
+                            </button>
+                        </div>
                     </div>
-                    <div style="display: flex; justify-content: flex-end;">
-                        <button class="btn-material btn-eliminar" style="padding: 4px 10px; font-size: 12px; border-radius: 4px;" onclick="eliminarProducto(${prod.id})">Eliminar</button>
+                    <div class="inv-metrics">
+                        <div class="inv-metric">
+                            <span class="lbl">Costo</span>
+                            <span class="val danger">${fmtMoney(costo.toFixed(0))}</span>
+                        </div>
+                        <div class="inv-metric">
+                            <span class="lbl">Precio</span>
+                            <span class="val">${fmtMoney(prod.precio)}</span>
+                        </div>
+                        <div class="inv-metric">
+                            <span class="lbl">Ganancia (${porcentaje}%)</span>
+                            <span class="val success">${fmtMoney(ganancia.toFixed(0))}</span>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+    }
+
+    // ------- Historial de ventas del día -------
+    const divHistorial = document.getElementById('historial-lista');
+    if (divHistorial) {
+        if (historial.length === 0) {
+            divHistorial.innerHTML = `
+                <div class="empty-state" style="border:none; box-shadow:none; padding:22px 10px;" data-testid="empty-historial">
+                    <span class="material-icons-round">receipt_long</span>
+                    Aún no hay ventas registradas hoy.
+                </div>`;
+        } else {
+            divHistorial.innerHTML = historial.map((factura, index) => `
+                <div class="factura-item" data-testid="factura-${index}">
+                    <div class="factura-detalle">
+                        <strong>${esc(factura.detalle)}</strong>
+                        <div class="factura-hora">${factura.hora}</div>
+                    </div>
+                    <div class="factura-right">
+                        <span class="factura-total">${fmtMoney(factura.total)}</span>
+                        <button class="btn-deshacer" onclick="deshacerVenta(${index})" title="Deshacer" data-testid="btn-deshacer-${index}">
+                            <span class="material-icons-round">delete_forever</span>
+                        </button>
                     </div>
                 </div>
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px; margin-top:5px; font-size:12px; background:#fff; padding:6px; border-radius:4px; border:1px solid #e1f5fe;">
-                    <div>Costo un.: <strong style="color:#c62828;">$${costo.toFixed(0)}</strong></div>
-                    <div>Precio Venta: <strong>$${prod.precio}</strong></div>
-                    <div style="grid-column: span 2; border-top:1px solid #eee; padding-top:4px;">
-                        Ganancia Limpia: <strong style="color:#2e7d32;">$${ganancia.toFixed(0)} (${porcentaje}%)</strong>
-                    </div>
-                </div>`;
-        });
+            `).join('');
+        }
     }
 
-    const divHistorial = document.getElementById('historial-lista');
-    if(divHistorial) {
-        divHistorial.innerHTML = historial.length === 0 ? '<p style="color:#757575; font-size:13px;">No hay ventas hoy.</p>' : '';
-        historial.forEach((factura, index) => {
-            divHistorial.innerHTML += `
-                <div class="factura-item" style="display: flex; justify-content: space-between; align-items: center;">
-                    <div><strong> ${factura.detalle}</strong><div style="font-size: 11px; color: #757575;">${factura.hora}</div></div>
-                    <div><span style="font-weight: bold; color: #2e7d32; margin-right:10px;">$${factura.total.toLocaleString('es-CO')}</span>
-                    <button class="btn-deshacer" onclick="deshacerVenta(${index})"><span class="material-icons" style="font-size:20px;">delete_forever</span></button></div>
-                </div>`;
-        });
-    }
-
+    // ------- Lista de insumos -------
     const divInsumosLista = document.getElementById('lista-insumos-completa');
-    if(divInsumosLista) {
-        divInsumosLista.innerHTML = '';
-        insumos.forEach(ins => {
-            divInsumosLista.innerHTML += `
-                <div class="item-fila" style="font-size:13px;">
-                    <div><strong>${ins.nombre}</strong><div style="font-size:11px; color:#757575;">Costo unitario: $${ins.costoUnitario.toFixed(2)}</div></div>
-                    <button class="btn-material btn-eliminar" onclick="eliminarInsumo(${ins.id})"><span class="material-icons">delete</span></button>
+    if (divInsumosLista) {
+        if (insumos.length === 0) {
+            divInsumosLista.innerHTML = `
+                <div class="empty-state" data-testid="empty-insumos">
+                    <span class="material-icons-round">layers</span>
+                    Sin insumos registrados aún.
                 </div>`;
-        });
+        } else {
+            divInsumosLista.innerHTML = insumos.map(ins => `
+                <div class="product-card" data-testid="insumo-card-${ins.id}">
+                    <div class="product-info">
+                        <span class="product-name">${esc(ins.nombre)}</span>
+                        <span class="product-price">${fmtMoney(ins.costoUnitario.toFixed(2))} <small>costo unit.</small></span>
+                    </div>
+                    <div class="product-actions">
+                        <button class="icon-btn danger" onclick="eliminarInsumo(${ins.id})" title="Eliminar" data-testid="btn-eliminar-insumo-${ins.id}">
+                            <span class="material-icons-round">delete</span>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
     }
 }
 
@@ -259,17 +359,18 @@ function agregarInsumo() {
     if (!nombre || isNaN(costo) || isNaN(cantidad) || cantidad <= 0) return alert("Datos inválidos.");
 
     insumos.push({
-        id: Date.now(), nombre: nombre, costoTotal: costo, cantidadTotal: cantidad, costoUnitario: costo / cantidad
+        id: Date.now(), nombre, costoTotal: costo, cantidadTotal: cantidad, costoUnitario: costo / cantidad
     });
-    guardarEnMemoria(); 
+    guardarEnMemoria();
     actualizarPantalla();
     nombreInp.value = ''; costoInp.value = ''; cantInp.value = '';
+    mostrarToast(`✔ Insumo "${nombre}" registrado`, 'éxito');
 }
 
 function eliminarInsumo(id) {
     if (confirm("¿Eliminar este insumo?")) {
         insumos = insumos.filter(i => i.id !== id);
-        guardarEnMemoria(); 
+        guardarEnMemoria();
         actualizarPantalla();
     }
 }
@@ -300,19 +401,20 @@ function agregarProducto() {
     });
 
     inventario.push({
-        id: Date.now(), nombre: nombre, precio: precio, stock: stock,
+        id: Date.now(), nombre, precio, stock,
         costoProduccion: costoProduccionUnidad, ganancia: precio - costoProduccionUnidad, receta: recetaGuardada
     });
 
-    guardarEnMemoria(); 
+    guardarEnMemoria();
     actualizarPantalla();
     nombreInput.value = ''; precioInput.value = ''; stockInput.value = '';
+    mostrarToast(`✔ "${nombre}" agregado al inventario`, 'éxito');
 }
 
 function eliminarProducto(id) {
     if (confirm("¿Eliminar producto?")) {
         inventario = inventario.filter(p => p.id !== id);
-        guardarEnMemoria(); 
+        guardarEnMemoria();
         actualizarPantalla();
     }
 }
@@ -324,26 +426,26 @@ function editarStockProducto(id) {
     if (nuevoStockStr !== null) {
         const nuevoStock = parseInt(nuevoStockStr);
         if (!isNaN(nuevoStock) && nuevoStock >= 0) {
-            producto.stock = nuevoStock; 
-            guardarEnMemoria(); 
+            producto.stock = nuevoStock;
+            guardarEnMemoria();
             actualizarPantalla();
         } else { alert("Número inválido."); }
     }
 }
 
 // ========================================================
-// 💰 VENTAS, CARRITO Y VUELTOS (BLINDADAS OFFLINE)
+// 💰 VENTAS, CARRITO Y VUELTOS
 // ========================================================
 let totalVentaActual = 0;
 let callbackConfirmarVenta = null;
 
 function abrirCalculadoraVueltos(total, callbackExito) {
-    totalVentaActual = total; 
+    totalVentaActual = total;
     callbackConfirmarVenta = callbackExito;
-    document.getElementById('vueltos-total-venta').innerText = '$' + total.toLocaleString();
+    document.getElementById('vueltos-total-venta').innerText = fmtMoney(total);
     document.getElementById('vueltos-paga-con').value = '';
     document.getElementById('vueltos-resultado').innerText = '$0';
-    document.getElementById('vueltos-resultado').style.color = '#2e7d32';
+    document.getElementById('vueltos-resultado').style.color = '';
     document.getElementById('btn-confirmar-venta').disabled = true;
     document.getElementById('modal-vueltos').style.display = 'flex';
 }
@@ -355,11 +457,17 @@ function calcularCambio() {
     const btnConfirmar = document.getElementById('btn-confirmar-venta');
 
     if (pagaCon === 0) {
-        contenedorResultado.innerText = '$0'; contenedorResultado.style.color = '#2e7d32'; btnConfirmar.disabled = true;
+        contenedorResultado.innerText = '$0';
+        contenedorResultado.style.color = '';
+        btnConfirmar.disabled = true;
     } else if (vueltos < 0) {
-        contenedorResultado.innerText = 'Falta dinero: -$' + Math.abs(vueltos).toLocaleString(); contenedorResultado.style.color = '#c62828'; btnConfirmar.disabled = true;
+        contenedorResultado.innerText = 'Falta: -' + fmtMoney(Math.abs(vueltos));
+        contenedorResultado.style.color = 'var(--danger)';
+        btnConfirmar.disabled = true;
     } else {
-        contenedorResultado.innerText = '$' + vueltos.toLocaleString(); contenedorResultado.style.color = '#2e7d32'; btnConfirmar.removeAttribute('disabled');
+        contenedorResultado.innerText = fmtMoney(vueltos);
+        contenedorResultado.style.color = '';
+        btnConfirmar.removeAttribute('disabled');
     }
 }
 
@@ -369,23 +477,31 @@ function cerrarModalVueltos() { document.getElementById('modal-vueltos').style.d
 function finalizarVentaConVueltos() { cerrarModalVueltos(); if (typeof callbackConfirmarVenta === 'function') callbackConfirmarVenta(); }
 
 function agregarAlCarrito(id) {
-    vibrar(30); 
-    efectoVisualToque(event?.target); 
-
+    vibrar(25);
     const producto = inventario.find(p => p.id === id);
     if (!producto) return;
     const enCarritoActual = carrito.filter(p => p.id === id).length;
     if (enCarritoActual >= producto.stock) return alert("¡No hay más stock disponible!");
-    carrito.push(producto); 
-    guardarEnMemoria(); 
+    carrito.push({...producto});
+    guardarEnMemoria();
     actualizarPantalla();
+}
+
+function quitarDelCarrito(id) {
+    vibrar(20);
+    const idx = carrito.findIndex(p => p.id === id);
+    if (idx !== -1) {
+        carrito.splice(idx, 1);
+        guardarEnMemoria();
+        actualizarPantalla();
+    }
 }
 
 function limpiarCarrito() { carrito = []; guardarEnMemoria(); actualizarPantalla(); }
 
 function ejecutarTransaccionVenta(detalleVenta, totalVenta, actualizarStockCallback) {
     const hora = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    
+
     actualizarStockCallback();
 
     const transaccion = {
@@ -400,7 +516,9 @@ function ejecutarTransaccionVenta(detalleVenta, totalVenta, actualizarStockCallb
 
     if (!navigator.onLine) {
         guardarVentaOffline(transaccion);
-        mostrarToast("📴 Venta guardada localmente (Sin red). Se sincronizará al volver la señal.", "alerta", 4000);
+        mostrarToast("📴 Venta guardada localmente. Se sincronizará al volver la señal.", "alerta", 4000);
+    } else {
+        mostrarToast(`✔ Venta registrada · ${fmtMoney(totalVenta)}`, "éxito", 2500);
     }
 
     guardarEnMemoria();
@@ -421,7 +539,7 @@ function venderUno(id) {
 function cobrarVenta() {
     if (carrito.length === 0) return;
     let total = carrito.reduce((sum, p) => sum + p.precio, 0);
-    
+
     const carritoCopia = [...carrito];
     const detalleCombo = obtenerResumenCarrito(carritoCopia);
 
@@ -449,16 +567,16 @@ function deshacerVenta(index) {
         const producto = inventario.find(p => p.nombre === nombreProducto);
         if (producto) producto.stock += cantidad;
     });
-    
+
     historial.splice(index, 1);
-    guardarEnMemoria(); 
+    guardarEnMemoria();
     actualizarPantalla();
 }
 
 function obtenerResumenCarrito(listaProductos) {
     const conteo = {};
     listaProductos.forEach(prod => { conteo[prod.nombre] = (conteo[prod.nombre] || 0) + 1; });
-    return Object.entries(conteo).map(([nombre, cant]) => `${cant} ${nombre}`).join(", "); 
+    return Object.entries(conteo).map(([nombre, cant]) => `${cant} ${nombre}`).join(", ");
 }
 
 // ========================================================
@@ -468,16 +586,18 @@ function mostrarHistorialCierres() {
     const divModal = document.getElementById('modal-historial-cierres');
     const divLista = document.getElementById('lista-cierres-dia-a-dia');
     if (!divLista || !divModal) return;
-    
+
     divLista.innerHTML = '';
     if (historicoAcumulado.length === 0) {
-        divLista.innerHTML = '<p style="text-align:center; color:#777; font-size:14px; margin:20px 0;">No hay cierres de caja registrados.</p>';
+        divLista.innerHTML = '<p style="text-align:center; color:var(--text-muted); font-size:13px; margin:20px 0;">No hay cierres registrados.</p>';
     } else {
         historicoAcumulado.forEach((cierre) => {
             divLista.innerHTML += `
-                <div style="display: flex; justify-content: space-between; align-items: center; background: #f9f9f9; padding: 10px 12px; border-radius: 8px; border-left: 4px solid #4caf50;">
-                    <span style="font-size: 14px; color: #333; font-weight: 500;"><span class="material-icons" style="font-size: 14px; vertical-align: middle; margin-right: 4px; color: #777;">calendar_today</span>${cierre.fecha || "Ajuste"}</span>
-                    <strong style="font-size: 15px; color: #2e7d32;">$${parseInt(cierre.balanceFinal || 0).toLocaleString()}</strong>
+                <div class="cierre-row">
+                    <span class="cierre-fecha">
+                        <span class="material-icons-round">calendar_today</span>${esc(cierre.fecha || "Ajuste")}
+                    </span>
+                    <span class="cierre-monto">${fmtMoney(parseInt(cierre.balanceFinal || 0))}</span>
                 </div>`;
         });
     }
@@ -510,20 +630,20 @@ function editarAcumuladoTotal(event) {
 
 function cerrarCaja() {
     if (balance <= 0) return alert("No hay dinero en el balance de hoy para cerrar.");
-    
+
     if (confirm("¿Cerrar caja y acumular el dinero de hoy?")) {
         const ahora = new Date();
         const fecha = ahora.toLocaleDateString('es-CO') + " " + ahora.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        
+
         if (!Array.isArray(historicoAcumulado)) historicoAcumulado = [];
-        
+
         historicoAcumulado.push({
-            id: Date.now(), fecha: fecha, balanceFinal: balance, ventasDetalle: [...historial]
+            id: Date.now(), fecha, balanceFinal: balance, ventasDetalle: [...historial]
         });
 
-        balance = 0; 
-        historial = []; 
-        guardarEnMemoria(); 
+        balance = 0;
+        historial = [];
+        guardarEnMemoria();
         actualizarPantalla();
         alert("¡Caja cerrada y acumulada correctamente!");
     }
@@ -533,7 +653,7 @@ function verificarCierreDeDia() {
     const ahora = new Date();
     const hoyStr = ahora.toLocaleDateString('es-CO');
     let ultimaFechaControl = localStorage.getItem('empanadas_fecha_control');
-    
+
     if (!ultimaFechaControl) {
         localStorage.setItem('empanadas_fecha_control', hoyStr);
         return;
@@ -583,7 +703,7 @@ function agregarDiaDeLibreta() {
 
     guardarEnMemoria();
     actualizarPantalla();
-    mostrarHistorialCierres(); 
+    mostrarHistorialCierres();
 }
 
 function sumarAlBalance(event) {
@@ -591,12 +711,12 @@ function sumarAlBalance(event) {
         event.stopPropagation();
         event.preventDefault();
     }
-    
-    vibrar(40); 
-    efectoVisualToque(document.getElementById("balance-total")); 
+
+    vibrar(40);
+    efectoVisualToque(document.getElementById("balance-total"));
 
     let cantidadIngresada = prompt("¿Cuánto deseas sumar al balance de hoy?");
-    
+
     if (cantidadIngresada !== null && cantidadIngresada.trim() !== "") {
         let montoASumar = parseInt(cantidadIngresada.replace(/\D/g, ''));
 
@@ -611,18 +731,19 @@ function sumarAlBalance(event) {
 }
 
 // ========================================================
-// 🔐 GESTIÓN DE ROLES Y SEGURIDAD (MODO VENDEDOR / ADMIN)
+// 🔐 GESTIÓN DE ROLES
 // ========================================================
-const PIN_ADMIN = "1234"; 
-let rolActual = localStorage.getItem('zampa_rol') || 'vendedor'; 
+const PIN_ADMIN = "1234";
+let rolActual = localStorage.getItem('zampa_rol') || 'vendedor';
 
 function aplicarPermisosRol() {
     const esAdmin = (rolActual === 'admin');
     const iconoRol = document.getElementById('icono-rol');
-    
+
     if (iconoRol) {
-        iconoRol.innerText = esAdmin ? 'admin_panel_settings' : 'badge';
-        iconoRol.style.color = esAdmin ? '#ffeb3b' : '#ffffff';
+        const inner = iconoRol.querySelector('.material-icons-round') || iconoRol;
+        inner.innerText = esAdmin ? 'admin_panel_settings' : 'badge';
+        iconoRol.style.color = esAdmin ? 'var(--gold)' : '';
         iconoRol.title = esAdmin ? 'Modo Administrador (Toca para cambiar)' : 'Modo Vendedor (Toca para entrar con PIN)';
     }
 
@@ -636,7 +757,7 @@ function aplicarPermisosRol() {
 
     const pantallaInv = document.getElementById('pantalla-inventario');
     const pantallaIns = document.getElementById('pantalla-insumos');
-    
+
     if (!esAdmin && pantallaInv && pantallaIns) {
         if (pantallaInv.classList.contains('activa') || pantallaIns.classList.contains('activa')) {
             const btnVentas = document.querySelector('.dock-item');
@@ -653,7 +774,7 @@ function alternarRol() {
             localStorage.setItem('zampa_rol', 'admin');
             aplicarPermisosRol();
             actualizarPantalla();
-            alert("🔓 ¡Modo Administrador activado! Ahora tienes acceso al inventario y costos.");
+            alert("🔓 ¡Modo Administrador activado!");
         } else if (pinIngresado !== null) {
             alert("❌ PIN incorrecto. Acceso denegado.");
         }
@@ -663,13 +784,13 @@ function alternarRol() {
             localStorage.setItem('zampa_rol', 'vendedor');
             aplicarPermisosRol();
             actualizarPantalla();
-            alert("🔒 Modo Vendedor activado. Pestañas sensibles ocultas.");
+            alert("🔒 Modo Vendedor activado.");
         }
     }
 }
 
 // ========================================================
-// 📲 REPORTE INTELIGENTE POR WHATSAPP (CIERRE DE TURNO)
+// 📲 REPORTE WHATSAPP
 // ========================================================
 function enviarReporteWhatsApp() {
     if (balance <= 0 && historial.length === 0) {
@@ -678,9 +799,9 @@ function enviarReporteWhatsApp() {
 
     let telefonoDueño = localStorage.getItem('zampa_telefono_dueño');
     if (!telefonoDueño) {
-        telefonoDueño = prompt("📱 Ingresa el número de WhatsApp del dueño con código de país (Ej: 573001234567 para Colombia):");
+        telefonoDueño = prompt("📱 Ingresa el número de WhatsApp del dueño con código de país (Ej: 573001234567):");
         if (!telefonoDueño || telefonoDueño.trim() === "") return;
-        telefonoDueño = telefonoDueño.replace(/\D/g, ''); 
+        telefonoDueño = telefonoDueño.replace(/\D/g, '');
         localStorage.setItem('zampa_telefono_dueño', telefonoDueño);
     }
 
@@ -706,12 +827,12 @@ function enviarReporteWhatsApp() {
     const ahora = new Date();
     const fechaStr = ahora.toLocaleDateString('es-CO') + " - " + ahora.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-    let mensaje = `🌙 *REPORTE DE CIERRE - ZAMPA* 🥟\n` +
+    let mensaje = `🌙 *REPORTE DE CIERRE - ZAMPA*\n` +
                   `📅 *Fecha:* ${fechaStr}\n` +
-                  `👤 *Turno:* ${rolActual === 'admin' ? 'Administrador' : 'Vendedor Ambulante'}\n\n` +
-                  `💰 *DINERO EN CAJA: $${balance.toLocaleString('es-CO')}*\n\n` +
+                  `👤 *Turno:* ${rolActual === 'admin' ? 'Administrador' : 'Vendedor'}\n\n` +
+                  `💰 *DINERO EN CAJA: ${fmtMoney(balance)}*\n\n` +
                   `🔥 *PRODUCTOS VENDIDOS:*\n${detalleVentasTexto}\n` +
-                  `📦 *STOCK SOBRANTE (EN CAVA):*\n${detalleStockTexto}\n\n` +
+                  `📦 *STOCK SOBRANTE:*\n${detalleStockTexto}\n\n` +
                   `🚀 _Generado desde Zampa POS_`;
 
     const url = `https://api.whatsapp.com/send?phone=${telefonoDueño}&text=${encodeURIComponent(mensaje)}`;
@@ -719,25 +840,23 @@ function enviarReporteWhatsApp() {
 }
 
 // ========================================================
-// ⚡ MOTOR DE VIBRACIÓN Y TOASTS FLOTANTES (UX CALLE)
+// ⚡ VIBRACIÓN Y TOASTS
 // ========================================================
-function vibrar(patron = 35) {
+function vibrar(patron = 30) {
     if ("vibrate" in navigator) {
-        try {
-            navigator.vibrate(patron); 
-        } catch (e) {}
+        try { navigator.vibrate(patron); } catch (e) {}
     }
 }
 
 function efectoVisualToque(elemento) {
     if (!elemento) return;
     elemento.classList.remove('efecto-toque');
-    void elemento.offsetWidth; 
+    void elemento.offsetWidth;
     elemento.classList.add('efecto-toque');
 }
 
 function mostrarToast(mensaje, tipo = 'info', duracion = 3000) {
-    vibrar(tipo === 'error' ? [50, 40, 50] : 35);
+    vibrar(tipo === 'error' ? [50, 40, 50] : 25);
 
     let container = document.getElementById('toast-container');
     if (!container) {
@@ -748,13 +867,13 @@ function mostrarToast(mensaje, tipo = 'info', duracion = 3000) {
 
     const toast = document.createElement('div');
     toast.className = `toast ${tipo}`;
-    
+
     let icono = 'info';
     if (tipo === 'éxito') icono = 'check_circle';
     if (tipo === 'error') icono = 'error';
     if (tipo === 'alerta') icono = 'warning';
 
-    toast.innerHTML = `<span class="material-icons" style="font-size:22px;">${icono}</span> <span style="flex:1;">${mensaje}</span>`;
+    toast.innerHTML = `<span class="material-icons-round" style="font-size:20px;">${icono}</span><span style="flex:1;">${mensaje}</span>`;
     container.appendChild(toast);
 
     setTimeout(() => toast.classList.add('mostrar'), 10);
@@ -767,38 +886,38 @@ function mostrarToast(mensaje, tipo = 'info', duracion = 3000) {
 window.alert = function(mensaje) {
     let tipo = 'info';
     let msgMin = String(mensaje).toLowerCase();
-    
+
     if (msgMin.includes('error') || msgMin.includes('inválido') || msgMin.includes('incorrecto') || msgMin.includes('falta') || msgMin.includes('denegado') || msgMin.includes('no hay')) {
         tipo = 'error';
-    } else if (msgMin.includes('éxito') || msgMin.includes('correctamente') || msgMin.includes('activado') || msgMin.includes('cerrada') || msgMin.includes('acumulada')) {
+    } else if (msgMin.includes('éxito') || msgMin.includes('correctamente') || msgMin.includes('activado') || msgMin.includes('cerrada') || msgMin.includes('acumulada') || msgMin.includes('¡')) {
         tipo = 'éxito';
     } else if (msgMin.includes('⚠️') || msgMin.includes('paga')) {
         tipo = 'alerta';
     }
-    
+
     mostrarToast(mensaje, tipo, 3500);
 };
 
 // ========================================================
-// 📶 MOTOR OFFLINE Y COLA DE SINCRONIZACIÓN AUTOMÁTICA
+// 📶 ESTADO OFFLINE
 // ========================================================
 function actualizarEstadoRed() {
     const indicador = document.getElementById('indicador-offline');
     const iconoNube = document.getElementById('icono-nube');
-    
+
     if (!navigator.onLine) {
-        if (indicador) indicador.style.display = 'flex';
+        if (indicador) indicador.style.display = 'inline-flex';
         if (iconoNube) {
             iconoNube.innerText = 'cloud_off';
-            iconoNube.style.color = '#ff9800';
+            iconoNube.className = 'material-icons-round nube-error';
             iconoNube.title = 'Modo Offline: Guardando ventas localmente';
         }
     } else {
         if (indicador) indicador.style.display = 'none';
         if (iconoNube) {
-            iconoNube.innerText = 'cloud';
-            iconoNube.style.color = '#4caf50';
-            iconoNube.title = 'Conectado a la nube (Firebase)';
+            iconoNube.innerText = 'cloud_done';
+            iconoNube.className = 'material-icons-round nube-sincronizada';
+            iconoNube.title = 'Conectado a la nube';
         }
         sincronizarColaPendiente();
     }
@@ -806,12 +925,12 @@ function actualizarEstadoRed() {
 
 window.addEventListener('online', () => {
     actualizarEstadoRed();
-    mostrarToast("¡Internet recuperado! Sincronizando datos con Firebase...", "éxito", 3000);
+    mostrarToast("¡Internet recuperado! Sincronizando datos...", "éxito", 3000);
 });
 
 window.addEventListener('offline', () => {
     actualizarEstadoRed();
-    mostrarToast("⚠️ Sin conexión a internet. Las ventas se guardarán localmente.", "alerta", 4000);
+    mostrarToast("⚠️ Sin conexión. Las ventas se guardarán localmente.", "alerta", 4000);
 });
 
 document.addEventListener("DOMContentLoaded", actualizarEstadoRed);
@@ -824,12 +943,12 @@ function guardarVentaOffline(nuevaVenta) {
 
 function sincronizarColaPendiente() {
     if (!navigator.onLine) return;
-    
+
     let cola = JSON.parse(localStorage.getItem('zampa_cola_offline')) || [];
-    if (cola.length === 0) return; 
+    if (cola.length === 0) return;
 
     guardarEnMemoria();
 
     localStorage.removeItem('zampa_cola_offline');
-    mostrarToast("✅ ¡Ventas offline sincronizadas con éxito en la nube!", "éxito", 3000);
+    mostrarToast("✅ Ventas offline sincronizadas con éxito", "éxito", 3000);
 }

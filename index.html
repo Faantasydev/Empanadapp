@@ -2,221 +2,278 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#0288d1">
-    <title>Zampa - Punto de Venta e Inventario</title>
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+    <meta name="theme-color" content="#F5F5F7" media="(prefers-color-scheme: light)">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Zampa">
+    <title>Zampa · Punto de Venta e Inventario</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="logo.png">
 </head>
 <body>
 
-    <div id="splash-screen">
+    <!-- ==================== SPLASH ==================== -->
+    <div id="splash-screen" data-testid="splash-screen">
         <div class="splash-content">
             <div class="logo-animado-container">
                 <img src="logo-zampa.png" alt="Zampa Logo" class="logo-splash">
             </div>
-            <p class="splash-sub">Punto de Venta e Inventario</p>
+            <p class="splash-sub">Punto de Venta · Inventario</p>
         </div>
     </div>
 
-    <!-- Barra Superior (Header) Reorganizada y Estilizada -->
-    <header class="header-control">
-        
-        <!-- Izquierda: Control de Roles -->
-        <div style="display: flex; align-items: center;">
-            <span id="icono-rol" class="material-icons" style="cursor: pointer; font-size: 26px; color: #fff;" onclick="alternarRol()" title="Cambiar Rol">badge</span>
+    <!-- ==================== HEADER (iOS Large Title Style) ==================== -->
+    <header class="header-control" data-testid="app-header">
+        <div class="header-left">
+            <button id="icono-rol" class="header-icon-btn" onclick="alternarRol()" title="Cambiar Rol" data-testid="btn-rol">
+                <span class="material-icons-round">badge</span>
+            </button>
         </div>
 
-        <!-- Centro: Logo y Subtítulo -->
-        <div style="text-align: center; flex: 1; display: flex; flex-direction: column; align-items: center; padding: 0 8px;">
-            <img src="logo-zampa.png" alt="Zampa Logo" class="logo-zampa">
-            <span class="header-subtitle">Punto de Venta e Inventario</span>
+        <div class="header-center">
+            <img src="logo-zampa.png" alt="Zampa" class="logo-zampa">
         </div>
 
-        <!-- Derecha: Indicador Offline y Estado de Nube -->
-        <div style="display: flex; align-items: center; gap: 6px;">
-            <div id="indicador-offline" style="display: none; background: #e65100; color: white; font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 8px; align-items: center; gap: 2px;">
-                <span class="material-icons" style="font-size: 12px;">cloud_off</span> OFFLINE
+        <div class="header-right">
+            <div id="indicador-offline" class="chip-offline" data-testid="chip-offline">
+                <span class="material-icons-round">wifi_off</span>
+                <span>Offline</span>
             </div>
-            <span id="icono-nube" class="material-icons nube-sincronizada" style="font-size: 22px;" title="Estado de sincronización">cloud</span>
+            <button id="icono-nube-btn" class="header-icon-btn" title="Estado de sincronización" data-testid="btn-nube">
+                <span id="icono-nube" class="material-icons-round nube-sincronizada">cloud_done</span>
+            </button>
         </div>
     </header>
 
-    <div class="container">
-        
-        <div id="pantalla-ventas" class="pestana-contenido activa">
-            
-            <div class="card balance-card" onclick="mostrarHistorialCierres()" style="cursor: pointer; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 22px 15px;">
-    
-    <span class="balance-title" style="font-size: 13px; letter-spacing: 1px; text-transform: uppercase; opacity: 0.9; margin-bottom: 6px;">BALANCE DE VENTAS (HOY)</span>
-    
-    <div id="balance-total" style="cursor: pointer; font-size: 42px; font-weight: bold; margin: 4px 0; line-height: 1.1; padding: 4px 12px; border-radius: 8px;" onclick="sumarAlBalance(event)" title="Toca para sumar al balance del día">$0</div>
-    
-    <div id="saldo-gran-total" style="font-size: 14px; opacity: 0.9; margin-top: 6px; font-weight: normal;">Acumulado Total: $0</div>
-    
-    <div style="margin-top: 16px; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; width: 100%;">
-    <span style="cursor: pointer; display: inline-flex; align-items: center; gap: 5px; font-size: 13px; opacity: 0.95; padding: 6px 14px; background: rgba(255, 255, 255, 0.2); border-radius: 20px; font-weight: 500;" onclick="event.stopPropagation(); cerrarCaja();">
-        <span class="material-icons" style="font-size: 16px;">autorenew</span> Cerrar Caja
-    </span>
-    <span style="cursor: pointer; display: inline-flex; align-items: center; gap: 5px; font-size: 13px; opacity: 0.95; padding: 6px 14px; background: #25D366; color: white; border-radius: 20px; font-weight: bold; box-shadow: 0 2px 6px rgba(0,0,0,0.2);" onclick="event.stopPropagation(); enviarReporteWhatsApp();">
-        <span class="material-icons" style="font-size: 16px;">share</span> WhatsApp
-    </span>
-</div>
+    <!-- ==================== CONTENIDO PRINCIPAL ==================== -->
+    <main class="container">
 
-</div>
-        
-            <div class="card">
-                <h2><span class="material-icons">shopping_basket</span> Registrar Venta</h2>
-                
-                <div id="lista-ventas-disponibles"></div>
-                
-                <div id="seccion-carrito" style="margin-top: 20px; border-top: 2px solid #eee; padding-top: 15px; display: none;">
-                    <h3 style="font-size: 14px; color: #555;">Resumen del pedido:</h3>
-                    <div id="lista-carrito"></div>
-                    <div style="font-size: 18px; font-weight: bold; margin: 10px 0;">Total: <span id="total-carrito">$0</span></div>
-                    <button class="btn-material" style="background-color: #2e7d32; width: 100%;" onclick="cobrarVenta()">
-                        <span class="material-icons">payments</span> Cobrar Venta
+        <!-- ============ PESTAÑA VENTAS ============ -->
+        <section id="pantalla-ventas" class="pestana-contenido activa">
+
+            <!-- Balance Card Premium Gold -->
+            <div class="balance-card" onclick="mostrarHistorialCierres()" data-testid="balance-card">
+                <div class="balance-glow"></div>
+                <div class="balance-shine"></div>
+
+                <span class="balance-title">Balance de Ventas · Hoy</span>
+
+                <div id="balance-total" class="balance-amount" onclick="sumarAlBalance(event)" title="Toca para sumar al balance del día" data-testid="balance-total">$0</div>
+
+                <div id="saldo-gran-total" class="balance-acumulado" data-testid="saldo-acumulado">Acumulado Total: $0</div>
+
+                <div class="balance-actions">
+                    <button class="pill-action" onclick="event.stopPropagation(); cerrarCaja();" data-testid="btn-cerrar-caja">
+                        <span class="material-icons-round">autorenew</span> Cerrar Caja
                     </button>
-                    <button class="btn-material" style="background-color: #757575; width: 100%; margin-top: 6px;" onclick="limpiarCarrito()">Cancelar</button>
+                    <button class="pill-action pill-whatsapp" onclick="event.stopPropagation(); enviarReporteWhatsApp();" data-testid="btn-whatsapp">
+                        <span class="material-icons-round">ios_share</span> WhatsApp
+                    </button>
                 </div>
             </div>
 
-            <div id="modal-vueltos" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
-                <div style="background: white; width: 90%; max-width: 360px; padding: 20px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); text-align: center; box-sizing: border-box;">
-                    <h3 style="margin-top: 0; color: #2e7d32; display: flex; align-items: center; justify-content: center; gap: 5px;">
-                        <span class="material-icons">calculate</span> Total de la Venta
-                    </h3>
-                    <div id="vueltos-total-venta" style="font-size: 32px; font-weight: bold; margin: 10px 0; color: #1b5e20;">$0</div>
-                    
-                    <p style="margin: 10px 0 5px 0; font-size: 14px; color: #555; text-align: left; font-weight: bold;">¿Con cuánto paga el cliente?</p>
-                    <input type="number" id="vueltos-paga-con" placeholder="Ej: 5000, 10000, 20000" style="width: 100%; padding: 12px; font-size: 18px; border: 2px solid #a5d6a7; border-radius: 8px; margin-bottom: 15px; text-align: center; box-sizing: border-box;" oninput="calcularCambio()">
+            <!-- Sección Registrar Venta -->
+            <div class="section-header">
+                <h2 data-testid="titulo-registrar-venta">Registrar Venta</h2>
+                <span class="section-sub">Selecciona productos</span>
+            </div>
 
-                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 15px;">
-                        <button type="button" style="padding: 8px 4px; border: 1px solid #ccc; background: #f5f5f5; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer;" onclick="definirPagoRapido(2000)">$2.000</button>
-                        <button type="button" style="padding: 8px 4px; border: 1px solid #ccc; background: #f5f5f5; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer;" onclick="definirPagoRapido(5000)">$5.000</button>
-                        <button type="button" style="padding: 8px 4px; border: 1px solid #ccc; background: #f5f5f5; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer;" onclick="definirPagoRapido(10000)">$10.000</button>
-                        <button type="button" style="padding: 8px 4px; border: 1px solid #ccc; background: #f5f5f5; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer;" onclick="definirPagoRapido(20000)">$20.000</button>
-                        <button type="button" style="padding: 8px 4px; border: 1px solid #ccc; background: #f5f5f5; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer;" onclick="definirPagoRapido(50000)">$50.000</button>
-                        <button type="button" style="padding: 8px 4px; background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer;" onclick="definirPagoExacto()">Exacto</button>
-                    </div>
+            <div id="lista-ventas-disponibles" class="product-grid" data-testid="lista-ventas"></div>
 
-                    <div style="background: #f1f8e9; padding: 12px; border-radius: 8px; margin-bottom: 20px; border: 1px dashed #81c784;">
-                        <p style="margin: 0; font-size: 13px; color: #555;">Vueltos a entregar:</p>
-                        <div id="vueltos-resultado" style="font-size: 24px; font-weight: bold; color: #2e7d32; margin-top: 5px;">$0</div>
-                    </div>
-
-                    <div style="display: flex; gap: 10px;">
-                        <button class="btn-material" style="background-color: #757575; flex: 1; padding: 12px;" onclick="cerrarModalVueltos()">
-                            Cancelar
-                        </button>
-                        <button id="btn-confirmar-venta" class="btn-material" style="background-color: #2e7d32; flex: 1; padding: 12px;" onclick="finalizarVentaConVueltos()" disabled>
-                            <span class="material-icons" style="font-size: 16px; vertical-align: middle;">check_circle</span> Confirmar
-                        </button>
-                    </div>
+            <!-- Carrito flotante -->
+            <div id="seccion-carrito" class="cart-card" data-testid="seccion-carrito" style="display:none;">
+                <div class="cart-header">
+                    <span class="material-icons-round">shopping_bag</span>
+                    <span>Resumen del pedido</span>
                 </div>
+                <div id="lista-carrito" class="cart-list"></div>
+                <div class="cart-total">
+                    <span>Total</span>
+                    <span id="total-carrito" class="cart-total-value" data-testid="cart-total">$0</span>
+                </div>
+                <button class="btn-primary btn-cobrar" onclick="cobrarVenta()" data-testid="btn-cobrar">
+                    <span class="material-icons-round">payments</span> Cobrar Venta
+                </button>
+                <button class="btn-ghost" onclick="limpiarCarrito()" data-testid="btn-cancelar-carrito">Cancelar</button>
+            </div>
+
+            <!-- Historial -->
+            <div class="section-header" style="margin-top:26px;">
+                <h2 data-testid="titulo-historial">Historial del día</h2>
+                <span class="section-sub">Últimas ventas</span>
+            </div>
+            <div class="card" id="wrap-historial">
+                <div id="historial-lista" data-testid="historial-lista"></div>
+            </div>
+        </section>
+
+        <!-- ============ PESTAÑA INVENTARIO ============ -->
+        <section id="pantalla-inventario" class="pestana-contenido">
+            <div class="section-header">
+                <h2>Agregar Producto</h2>
+                <span class="section-sub">Nuevo ítem al inventario</span>
             </div>
 
             <div class="card">
-                <h2><span class="material-icons">history</span> Historial de Ventas Diario</h2>
-                <div id="historial-lista"></div>
-            </div>
-        </div>
-
-        <div id="pantalla-inventario" class="pestana-contenido">
-            <div class="card">
-                <h2><span class="material-icons">add_box</span> Agregar nuevo producto</h2>
                 <div class="formulario">
                     <div class="grupo-input">
-                        <input type="text" id="nuevo-nombre" placeholder="Nombre (Ej: Carne Molida)">
+                        <input type="text" id="nuevo-nombre" placeholder="Nombre (Ej: Carne Molida)" data-testid="input-nuevo-nombre">
                     </div>
                     <div class="grupo-input row">
-                        <input type="number" id="nuevo-precio" placeholder="Precio de Venta ($)">
-                        <input type="number" id="nuevo-stock" placeholder="Stock inicial">
+                        <input type="number" id="nuevo-precio" placeholder="Precio de venta ($)" data-testid="input-nuevo-precio">
+                        <input type="number" id="nuevo-stock" placeholder="Stock inicial" data-testid="input-nuevo-stock">
                     </div>
-                    
-                    <h3 style="font-size: 13px; color: #0288d1; margin-bottom: 8px;">Receta / Costo de Insumos:</h3>
-                    <div id="receta-insumos-seleccion" style="margin-bottom: 12px; background: #f0f4f8; padding: 10px; border-radius: 6px;"></div>
 
-                    <button class="btn-material" onclick="agregarProducto()">
-                        <span class="material-icons">add</span> Guardar Producto
+                    <h3 class="subtle-label">Receta / Costo de insumos</h3>
+                    <div id="receta-insumos-seleccion" class="receta-box"></div>
+
+                    <button class="btn-primary" onclick="agregarProducto()" data-testid="btn-guardar-producto">
+                        <span class="material-icons-round">add</span> Guardar Producto
                     </button>
                 </div>
-
-                <h3 style="margin-top: 20px; font-size: 14px; color: #78909c;">Inventario y Márgenes de Ganancia</h3>
-                <div id="lista-inventario-completo"></div>
             </div>
-        </div>
 
-        <div id="pantalla-insumos" class="pestana-contenido">
+            <div class="section-header" style="margin-top:24px;">
+                <h2>Inventario</h2>
+                <span class="section-sub">Márgenes de ganancia</span>
+            </div>
+            <div id="lista-inventario-completo" class="product-grid" data-testid="lista-inventario"></div>
+        </section>
+
+        <!-- ============ PESTAÑA INSUMOS ============ -->
+        <section id="pantalla-insumos" class="pestana-contenido">
+            <div class="section-header">
+                <h2>Registro de Insumos</h2>
+                <span class="section-sub">Costos base</span>
+            </div>
+
             <div class="card">
-                <h2><span class="material-icons">layers</span> Registro de Insumos</h2>
                 <div class="formulario">
                     <div class="grupo-input">
-                        <input type="text" id="insumo-nombre" placeholder="Nombre del Insumo (Ej: Carne, Aceite)">
+                        <input type="text" id="insumo-nombre" placeholder="Nombre (Ej: Carne, Aceite)" data-testid="input-insumo-nombre">
                     </div>
                     <div class="grupo-input row">
-                        <input type="number" id="insumo-costo" placeholder="Costo Total ($)">
-                        <input type="number" id="insumo-cantidad" placeholder="Cantidad Total (Ej: 1000g, 1u)">
+                        <input type="number" id="insumo-costo" placeholder="Costo total ($)" data-testid="input-insumo-costo">
+                        <input type="number" id="insumo-cantidad" placeholder="Cantidad total" data-testid="input-insumo-cantidad">
                     </div>
-                    <button class="btn-material" style="background-color: #5c6bc0;" onclick="agregarInsumo()">
-                        <span class="material-icons">playlist_add</span> Guardar Insumo
+                    <button class="btn-primary btn-secondary-color" onclick="agregarInsumo()" data-testid="btn-guardar-insumo">
+                        <span class="material-icons-round">playlist_add</span> Guardar Insumo
                     </button>
                 </div>
-
-                <h3 style="margin-top: 20px; font-size: 14px; color: #78909c;">Lista de Costos Base</h3>
-                <div id="lista-insumos-completa"></div>
             </div>
-        </div>
 
-        <div id="pantalla-pagos" class="pestana-contenido">
-            <div class="card">
-                <h2><span class="material-icons">qr_code_2</span> Métodos de Pago Rápido</h2>
-                <div class="qr-container">
-                    <p class="qr-instrucciones">Muestra este código para recibir pagos por <strong>Nequi o Transferencia</strong></p>
-                    <img src="qr_ejemplo.png" alt="Código QR de Pago" id="qr-pago" class="qr-imagen" onerror="this.src='https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=Registra_tu_cuenta_aqui'">
+            <div class="section-header" style="margin-top:24px;">
+                <h2>Lista de Costos Base</h2>
+                <span class="section-sub">Insumos registrados</span>
+            </div>
+            <div id="lista-insumos-completa" class="product-grid" data-testid="lista-insumos"></div>
+        </section>
+
+        <!-- ============ PESTAÑA QR PAGO ============ -->
+        <section id="pantalla-pagos" class="pestana-contenido">
+            <div class="section-header">
+                <h2>QR de Pago</h2>
+                <span class="section-sub">Nequi · Transferencia</span>
+            </div>
+
+            <div class="card qr-card" data-testid="qr-card">
+                <p class="qr-instrucciones">Muestra este código para recibir pagos por <strong>Nequi o Transferencia</strong></p>
+                <div class="qr-wrap">
+                    <img src="qr_ejemplo.png" alt="Código QR de Pago" id="qr-pago" class="qr-imagen" onerror="this.src='https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=Registra_tu_cuenta_aqui'">
                 </div>
+                <p class="qr-hint">Escaneo instantáneo · Sin comisiones extra</p>
             </div>
-        </div>
+        </section>
 
-    </div>
+    </main>
 
-    <div class="dock-inferior">
-        <button class="dock-item activo" onclick="cambiarPestaña('pantalla-ventas', this)">
-            <span class="material-icons">point_of_sale</span>
-            <span>Ventas</span>
+    <!-- ==================== DOCK INFERIOR iOS ==================== -->
+    <nav class="dock-inferior" data-testid="dock">
+        <button class="dock-item activo" onclick="cambiarPestaña('pantalla-ventas', this)" data-testid="dock-ventas">
+            <span class="dock-indicator"></span>
+            <span class="material-icons-round">point_of_sale</span>
+            <span class="dock-label">Ventas</span>
         </button>
-        <button id="dock-inventario" class="dock-item" onclick="cambiarPestaña('pantalla-inventario', this)">
-            <span class="material-icons">inventory_2</span>
-            <span>Inventario</span>
+        <button id="dock-inventario" class="dock-item" onclick="cambiarPestaña('pantalla-inventario', this)" data-testid="dock-inventario">
+            <span class="dock-indicator"></span>
+            <span class="material-icons-round">inventory_2</span>
+            <span class="dock-label">Inventario</span>
         </button>
-        <button id="dock-insumos" class="dock-item" onclick="cambiarPestaña('pantalla-insumos', this)">
-            <span class="material-icons">layers</span>
-            <span>Insumos</span>
+        <button id="dock-insumos" class="dock-item" onclick="cambiarPestaña('pantalla-insumos', this)" data-testid="dock-insumos">
+            <span class="dock-indicator"></span>
+            <span class="material-icons-round">layers</span>
+            <span class="dock-label">Insumos</span>
         </button>
-        <button class="dock-item" onclick="cambiarPestaña('pantalla-pagos', this)">
-            <span class="material-icons">qr_code</span>
-            <span>QR Pago</span>
+        <button class="dock-item" onclick="cambiarPestaña('pantalla-pagos', this)" data-testid="dock-qr">
+            <span class="dock-indicator"></span>
+            <span class="material-icons-round">qr_code_2</span>
+            <span class="dock-label">QR Pago</span>
         </button>
-    </div>
+    </nav>
 
-    <div id="modal-historial-cierres" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
-        <div style="background: white; width: 90%; max-width: 360px; padding: 20px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); box-sizing: border-box;">
-            
-            <h3 style="margin-top: 0; text-align: center; color: #1565c0; display: flex; align-items: center; justify-content: center; gap: 5px;">
-                <span class="material-icons">history</span> Historial de Días
+    <!-- ==================== MODAL VUELTOS ==================== -->
+    <div id="modal-vueltos" class="modal-overlay" data-testid="modal-vueltos">
+        <div class="modal-sheet">
+            <div class="modal-grabber"></div>
+            <h3 class="modal-title">
+                <span class="material-icons-round">calculate</span> Total de la Venta
             </h3>
-            
-            <button onclick="agregarDiaDeLibreta()" class="btn-material" style="background-color: #ff9800; width: 100%; margin-bottom: 15px; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px; border-radius: 8px;">
-                <span class="material-icons">menu_book</span> Agregar día de libreta
+            <div id="vueltos-total-venta" class="modal-big-amount" data-testid="modal-total-venta">$0</div>
+
+            <p class="modal-label">¿Con cuánto paga el cliente?</p>
+            <input type="number" id="vueltos-paga-con" placeholder="Ej: 5000, 10000, 20000" class="modal-input" oninput="calcularCambio()" data-testid="input-paga-con">
+
+            <div class="quick-money-grid">
+                <button type="button" class="quick-money" onclick="definirPagoRapido(2000)">$2.000</button>
+                <button type="button" class="quick-money" onclick="definirPagoRapido(5000)">$5.000</button>
+                <button type="button" class="quick-money" onclick="definirPagoRapido(10000)">$10.000</button>
+                <button type="button" class="quick-money" onclick="definirPagoRapido(20000)">$20.000</button>
+                <button type="button" class="quick-money" onclick="definirPagoRapido(50000)">$50.000</button>
+                <button type="button" class="quick-money quick-exact" onclick="definirPagoExacto()">Exacto</button>
+            </div>
+
+            <div class="vueltos-result-box">
+                <p>Vueltos a entregar</p>
+                <div id="vueltos-resultado" data-testid="vueltos-resultado">$0</div>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn-ghost btn-flex" onclick="cerrarModalVueltos()" data-testid="btn-cancelar-vueltos">Cancelar</button>
+                <button id="btn-confirmar-venta" class="btn-primary btn-flex" onclick="finalizarVentaConVueltos()" disabled data-testid="btn-confirmar-venta">
+                    <span class="material-icons-round">check_circle</span> Confirmar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== MODAL HISTORIAL CIERRES ==================== -->
+    <div id="modal-historial-cierres" class="modal-overlay" data-testid="modal-historial">
+        <div class="modal-sheet">
+            <div class="modal-grabber"></div>
+            <h3 class="modal-title">
+                <span class="material-icons-round">history</span> Historial de Días
+            </h3>
+
+            <button onclick="agregarDiaDeLibreta()" class="btn-primary btn-warning-color" data-testid="btn-libreta">
+                <span class="material-icons-round">menu_book</span> Agregar día de libreta
             </button>
 
-            <div id="lista-cierres-dia-a-dia" style="max-height: 300px; overflow-y: auto; margin-bottom: 15px;"></div>
-            
-            <button onclick="document.getElementById('modal-historial-cierres').style.display='none'" class="btn-material" style="background-color: #757575; width: 100%; padding: 12px; border-radius: 8px;">Cerrar</button>
+            <div id="lista-cierres-dia-a-dia" class="cierres-lista" data-testid="lista-cierres"></div>
+
+            <button onclick="document.getElementById('modal-historial-cierres').style.display='none'" class="btn-ghost" data-testid="btn-cerrar-modal-historial">Cerrar</button>
         </div>
     </div>
 
+    <!-- ==================== NAV SCRIPT ==================== -->
     <script>
         const ordenPestanas = ['pantalla-ventas', 'pantalla-inventario', 'pantalla-insumos', 'pantalla-pagos'];
         let indiceActual = 0;
@@ -231,13 +288,13 @@
                 p.classList.remove('activa', 'animar-adelante', 'animar-atras');
             });
             document.querySelectorAll('.dock-item').forEach(b => b.classList.remove('activo'));
-            
+
             const nuevaPestana = document.getElementById(idPestaña);
             if (nuevaPestana) nuevaPestana.classList.add('activa', direccion);
             if (botonActivo) botonActivo.classList.add('activo');
-            
+
             indiceActual = indiceNuevo;
-            window.scrollTo(0,0);
+            window.scrollTo({top:0, behavior:'smooth'});
         }
     </script>
 
