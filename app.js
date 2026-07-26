@@ -116,7 +116,7 @@ function guardarEnMemoria() {
     if (!nubeLista) return;
 
     db.ref('empanada_control/').set({
-        inventario, insumos, balance, historial, historicoAcumulado, deudores
+        inventario, insumos, balance, historial, historicoAcumulado, deudores, gastos
     }, (error) => {
         if (error) {
             if (nube) {

@@ -1,0 +1,46 @@
+{
+  "summary": "Re-tested MERGE de gastos duplicados fix on Zampa POS. Fix (adding 'gastos' to Firebase .set() payload at app.js:119) is CONFIRMED WORKING. Verified merge behavior with case-insensitive + whitespace normalization, correct amount aggregation, correct veces badge, correct 'Sumado' toast, and regression: distinct items do NOT merge. Chart transitions from hidden to visible when second distinct item added.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_evidence": {
+    "merge_5000_plus_3000": {
+      "expected": "$8.000 con badge '2× agregado' + toast 'Sumado'",
+      "observed": "monto=$8.000, veces='2× agregado' (data-testid=veces-{id}), toast='✔ Sumado a \"DirectRCA-97219097\": +$3.000 = $8.000'",
+      "status": "PASS"
+    },
+    "merge_case_insensitive_and_spaces": {
+      "expected": "'  ACEITE-{ts}  ' con costo 2000 debe mergear a $10.000 con '3× agregado'",
+      "observed": "monto=$10.000, veces='3× agregado', toast='✔ Sumado a \"DirectRCA-...\": +$2.000 = $10.000'",
+      "status": "PASS"
+    },
+    "regression_distinct_item": {
+      "expected": "'Servilletas-{ts}' se crea como item separado",
+      "observed": "cards separadas: Aceite $5.000 (2×) + Servilletas $1.500 (item nuevo)",
+      "status": "PASS"
+    },
+    "chart_visibility": {
+      "expected": "chart-gastos-wrap pasa de oculto (1 gasto) a visible (2+ gastos)",
+      "observed": "display=block, offsetHeight=240 con 2+ gastos, canvas renderiza donut 'Distribución de gastos'",
+      "status": "PASS"
+    }
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "app.js:73-96 - Firebase .on('value') listener overwrites local state on every snapshot. This can cause race conditions if a user clicks 'Registrar Gasto' rapidly. Recommend debouncing or optimistic-update reconciliation.",
+    "app.js is 1613 lines - consider splitting (gastos.js, ventas.js, firebase.js, auth.js) per <700 lines guideline.",
+    "window.gastos/rolActual not exposed (declared with 'let' at module top-level) — makes debugging harder. Consider intentionally exposing to window in dev mode."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A", "frontend": "100%"},
+  "test_credentials": "PIN Admin: 1234; localStorage zampa_rol=admin bypasses PIN modal",
+  "seed_data_creation": "Firebase RTDB now contains gastos created during testing (Aceite-96993097, AceiteRCA-97096548, TraceRCA-97162592, DirectRCA-97219097, Servilletas-*). These persist in the shared preview Firebase. Consider cleanup or scoping to test-runs.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Merge fix at app.js:119 (adding 'gastos' to .set() payload) works correctly. When testing via Playwright, note that (a) the fixed bottom dock-inferior nav overlaps the 'Registrar Gasto' button on desktop 1440x900 - use force=True or scroll_into_view; (b) rapid Playwright click after fill() can occasionally lose the first click - workaround: use await page.evaluate('() => window.agregarGasto()') or add 200ms blur+wait before click. This is NOT a real user bug. Merge validated via direct function calls: 5000+3000=$8000 (2×), +2000 uppercase/whitespace=$10000 (3×), distinct Servilletas $1500 separate, chart-gastos-wrap becomes visible.",
+  "rca of the issue": "Original bug: guardarEnMemoria() at app.js:118 wrote db.ref().set({inventario,insumos,balance,historial,historicoAcumulado,deudores}) without 'gastos'. Firebase .on('value') listener at line 82 then re-hydrated gastos from server (which was empty), overwriting locally-added gasto. Fix adds 'gastos' to the payload so persistence + optimistic snapshot echo works. Verified via network trace: SNAPSHOT gastos array now includes locally-added items immediately after set()."
+}
