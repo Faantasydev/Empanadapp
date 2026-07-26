@@ -21,7 +21,7 @@ button, input, select, textarea {
 }
 
 /* =========================================
-   BARRA SUPERIOR (HEADER) FIJA Y CENTRADA
+   BARRA SUPERIOR (HEADER) OPTIMIZADA
    ========================================= */
 .header-control {
     position: fixed;
@@ -31,14 +31,13 @@ button, input, select, textarea {
     width: 100%;
     max-width: 480px;
     z-index: 999;
-    background-color: #29b6f6;
-    padding: 8px 15px; /* <-- Relleno reducido */
+    background-color: #0288d1;
+    padding: 10px 16px;
     color: white;
     box-shadow: 0 2px 5px rgba(0,0,0,0.15);
     display: flex;
-    flex-direction: column;
+    justify-content: space-between;
     align-items: center;
-    text-align: center;
 }
 
 .header-main {
@@ -46,21 +45,18 @@ button, input, select, textarea {
     justify-content: space-between;
     align-items: center;
     width: 100%;
-    position: relative;
 }
 
 .logo-zampa {
-    height: 50px; /* <-- Altura del logo reducida (antes 85px) */
+    height: 38px;
     object-fit: contain;
-    filter: drop-shadow(2px 2px 3px rgba(0,0,0,0.3));
-    margin: 0 auto;
+    filter: drop-shadow(1px 1px 2px rgba(0,0,0,0.2));
 }
 
-.header-subtittle {
-    margin: 4px 0 0 0; /* <-- Menor separación arriba */
-    font-size: 11px;   /* <-- Texto un poco más sutil */
+.header-subtitle {
+    font-size: 11px;
     opacity: 0.90;
-    font-weight: 500;
+    font-weight: 300;
     letter-spacing: 0.5px;
 }
 
@@ -75,7 +71,7 @@ button, input, select, textarea {
     z-index: 1;
     overflow: hidden;
     padding-bottom: 90px;
-    padding-top: 95px; /* <-- Reducido para coincidir con la nueva barra delgada (antes 150px) */
+    padding-top: 75px; /* Ajustado exactamente para la nueva barra superior compacta */
 }
 
 
@@ -286,19 +282,17 @@ button, input, select, textarea {
 }
 
 /* =========================================
-   ESTADOS DE LA NUBE
+   ESTADOS DE LA NUBE Y INDICADORES
    ========================================= */
 #icono-nube {
-    font-size: 24px;
+    font-size: 22px;
     transition: color 0.3s ease;
     cursor: pointer;
-    position: absolute;
-    right: 0;
 }
 
-.nube-sincronizada { color: #2ec4b6; }
-.nube-cargando { color: #ff9f1c; animation: parpadeoNube 1s infinite alternate; }
-.nube-error { color: #e71d36; }
+.nube-sincronizada { color: #4caf50 !important; }
+.nube-cargando { color: #ffeb3b !important; animation: parpadeoNube 1s infinite alternate; }
+.nube-error { color: #ff5252 !important; }
 
 @keyframes parpadeoNube {
     from { opacity: 0.4; }
@@ -314,7 +308,7 @@ button, input, select, textarea {
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: #29b6f6; /* El azul de tu barra */
+    background-color: #0288d1;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -330,21 +324,17 @@ button, input, select, textarea {
 }
 
 .logo-animado-container {
-    width: 250px; /* Tamaño del logo en la pantalla de carga */
+    width: 250px;
     overflow: hidden;
 }
 
 .logo-splash {
     width: 100%;
-    /* Esto vuelve el logo blanco para que contraste con el fondo azul */
     filter: brightness(0) invert(1); 
-    
-    /* Efecto que oculta la imagen y la revela de izquierda a derecha */
     clip-path: polygon(0 0, 0 0, 0 100%, 0% 100%);
     animation: escribirLogo 1.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
-/* Animación de "escritura" */
 @keyframes escribirLogo {
     0% { clip-path: polygon(0 0, 0 0, 0 100%, 0% 100%); }
     100% { clip-path: polygon(0 0, 100% 0, 100% 100%, 0% 100%); }
@@ -371,14 +361,11 @@ button, input, select, textarea {
 /* ========================================================
    🌙 UX NOCTURNO, ÁREAS DE TOQUE Y EFECTOS TÁCTILES
    ======================================================== */
-
-/* 1. Seguridad ergonómica para dedos rápidos (Mínimo 48px) */
 button, .btn-material, .dock-item, .item-fila, #balance-total {
     min-height: 48px;
-    touch-action: manipulation; /* Evita que la pantalla haga zoom accidental al tocar rápido */
+    touch-action: manipulation;
 }
 
-/* 2. Efecto visual de rebote rápido al tocar un botón o el balance */
 @keyframes toque-pulse {
     0% { transform: scale(1); }
     50% { transform: scale(0.94); }
@@ -389,11 +376,11 @@ button, .btn-material, .dock-item, .item-fila, #balance-total {
 }
 
 /* ========================================================
-   🍞 SISTEMA DE TOASTS FLOTANTES (REEMPLAZO DE ALERTS)
+   🍞 SISTEMA DE TOASTS FLOTANTES
    ======================================================== */
 #toast-container {
     position: fixed;
-    bottom: 80px; /* Flota justo por encima de tu barra inferior (Dock) */
+    bottom: 80px;
     left: 50%;
     transform: translateX(-50%);
     z-index: 99999;
@@ -428,7 +415,6 @@ button, .btn-material, .dock-item, .item-fila, #balance-total {
     transform: translateY(0);
 }
 
-/* Colores según el tipo de aviso */
 .toast.éxito { background: #1b5e20; border-left: 6px solid #a5d6a7; }
 .toast.error { background: #b71c1c; border-left: 6px solid #ef9a9a; }
 .toast.info  { background: #01579b; border-left: 6px solid #81d4fa; }
