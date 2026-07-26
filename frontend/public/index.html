@@ -178,6 +178,48 @@
             <div id="lista-insumos-completa" class="product-grid" data-testid="lista-insumos"></div>
         </section>
 
+        <!-- ============ PESTAÑA DEUDORES ============ -->
+        <section id="pantalla-deudores" class="pestana-contenido">
+            <div class="section-header">
+                <h2>Deudores</h2>
+                <span class="section-sub">Fiado + 10% recargo</span>
+            </div>
+
+            <!-- Resumen deuda total -->
+            <div class="deuda-summary-card" data-testid="deuda-summary">
+                <div class="deuda-summary-glow"></div>
+                <span class="deuda-label">Deuda Total Acumulada</span>
+                <div id="deuda-total-monto" class="deuda-monto" data-testid="deuda-total">$0</div>
+                <div class="deuda-count" id="deuda-count-text">0 personas fiadas</div>
+            </div>
+
+            <!-- Form nuevo deudor -->
+            <div class="card">
+                <h3 class="card-inline-title"><span class="material-icons-round">person_add</span> Agregar deudor</h3>
+                <div class="formulario">
+                    <div class="grupo-input">
+                        <input type="text" id="deudor-nombre" placeholder="Nombre completo" data-testid="input-deudor-nombre">
+                    </div>
+                    <div class="grupo-input">
+                        <input type="number" id="deudor-monto" placeholder="Monto que debe ($)" data-testid="input-deudor-monto">
+                    </div>
+                    <div class="deuda-hint">
+                        <span class="material-icons-round">info</span>
+                        Se sumará automáticamente <strong>10% de recargo</strong> al monto ingresado
+                    </div>
+                    <button class="btn-primary" onclick="agregarDeudor()" data-testid="btn-guardar-deudor">
+                        <span class="material-icons-round">add</span> Registrar Deuda
+                    </button>
+                </div>
+            </div>
+
+            <div class="section-header" style="margin-top:22px;">
+                <h2>Lista de Fiados</h2>
+                <span class="section-sub">Solo se elimina al pagar</span>
+            </div>
+            <div id="lista-deudores" class="product-grid" data-testid="lista-deudores"></div>
+        </section>
+
         <!-- ============ PESTAÑA QR PAGO ============ -->
         <section id="pantalla-pagos" class="pestana-contenido">
             <div class="section-header">
@@ -212,6 +254,11 @@
             <span class="dock-indicator"></span>
             <span class="material-icons-round">layers</span>
             <span class="dock-label">Insumos</span>
+        </button>
+        <button class="dock-item" onclick="cambiarPestaña('pantalla-deudores', this)" data-testid="dock-deudores">
+            <span class="dock-indicator"></span>
+            <span class="material-icons-round">handshake</span>
+            <span class="dock-label">Fiados</span>
         </button>
         <button class="dock-item" onclick="cambiarPestaña('pantalla-pagos', this)" data-testid="dock-qr">
             <span class="dock-indicator"></span>
@@ -262,6 +309,22 @@
             <h3 class="modal-title">
                 <span class="material-icons-round">history</span> Historial de Días
             </h3>
+
+            <!-- Gráfico circular top productos -->
+            <div id="chart-productos-wrap" class="chart-wrap">
+                <div class="chart-header">
+                    <span class="material-icons-round">insights</span>
+                    <span>Productos más vendidos</span>
+                </div>
+                <div id="chart-productos-inner" class="chart-inner" data-testid="chart-productos">
+                    <canvas id="chart-productos-canvas"></canvas>
+                    <div id="chart-productos-legend" class="chart-legend"></div>
+                </div>
+                <div id="chart-productos-empty" class="chart-empty" style="display:none;">
+                    <span class="material-icons-round">pie_chart</span>
+                    <p>Aún no hay suficientes ventas para generar estadísticas.</p>
+                </div>
+            </div>
 
             <button onclick="agregarDiaDeLibreta()" class="btn-primary btn-warning-color" data-testid="btn-libreta">
                 <span class="material-icons-round">menu_book</span> Agregar día de libreta
@@ -337,6 +400,7 @@
 
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script src="app.js"></script>
 
 </body>

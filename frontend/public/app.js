@@ -41,8 +41,10 @@ let insumos = JSON.parse(localStorage.getItem('empanadas_insumos')) || [];
 let balance = parseFloat(localStorage.getItem('empanadas_balance')) || 0;
 let historial = JSON.parse(localStorage.getItem('empanadas_historial')) || [];
 let historicoAcumulado = JSON.parse(localStorage.getItem('empanadas_historico_general')) || [];
+let deudores = JSON.parse(localStorage.getItem('zampa_deudores')) || [];
 let carrito = [];
 let nubeLista = false;
+let chartProductos = null; // instancia Chart.js
 
 // Utilidad: formatea número a moneda COP corta ($1.234)
 function fmtMoney(n) {
@@ -73,6 +75,7 @@ db.ref('empanada_control/').on('value', (snapshot) => {
         if (data.insumos && Array.isArray(data.insumos)) insumos = data.insumos;
         if (data.balance !== undefined) balance = data.balance;
         if (data.historial && Array.isArray(data.historial)) historial = data.historial;
+        if (data.deudores && Array.isArray(data.deudores)) deudores = data.deudores;
 
         if (data.historicoAcumulado && Array.isArray(data.historicoAcumulado)) {
             historicoAcumulado = data.historicoAcumulado;
@@ -97,6 +100,7 @@ function guardarEnMemoria() {
     localStorage.setItem('empanadas_balance', balance.toString());
     localStorage.setItem('empanadas_historial', JSON.stringify(historial));
     localStorage.setItem('empanadas_historico_general', JSON.stringify(historicoAcumulado));
+    localStorage.setItem('zampa_deudores', JSON.stringify(deudores));
 
     const nube = document.getElementById('icono-nube');
     if (nube) {
@@ -107,7 +111,7 @@ function guardarEnMemoria() {
     if (!nubeLista) return;
 
     db.ref('empanada_control/').set({
-        inventario, insumos, balance, historial, historicoAcumulado
+        inventario, insumos, balance, historial, historicoAcumulado, deudores
     }, (error) => {
         if (error) {
             if (nube) {
@@ -346,6 +350,9 @@ function actualizarPantalla() {
             `).join('');
         }
     }
+
+    // ------- Deudores -------
+    renderDeudores();
 }
 
 // ========================================================
@@ -591,6 +598,9 @@ function mostrarHistorialCierres() {
     const divLista = document.getElementById('lista-cierres-dia-a-dia');
     if (!divLista || !divModal) return;
 
+    // Renderizar gráfico circular de productos más vendidos
+    renderChartTopProductos();
+
     divLista.innerHTML = '';
     if (historicoAcumulado.length === 0) {
         divLista.innerHTML = '<p style="text-align:center; color:var(--text-muted); font-size:13px; margin:20px 0;">No hay cierres registrados.</p>';
@@ -606,6 +616,112 @@ function mostrarHistorialCierres() {
         });
     }
     divModal.style.display = 'flex';
+}
+
+// ========================================================
+// 📊 GRÁFICO CIRCULAR: TOP PRODUCTOS MÁS VENDIDOS
+// ========================================================
+function calcularTopProductos() {
+    const conteo = {};
+
+    const procesarDetalle = (detalle) => {
+        if (!detalle || typeof detalle !== 'string') return;
+        detalle.split(', ').forEach(item => {
+            const partes = item.trim().split(' ');
+            const cant = parseInt(partes[0]) || 1;
+            const nombre = partes.slice(1).join(' ');
+            if (nombre) conteo[nombre] = (conteo[nombre] || 0) + cant;
+        });
+    };
+
+    // Ventas de hoy
+    historial.forEach(v => procesarDetalle(v.detalle));
+
+    // Ventas de días acumulados
+    historicoAcumulado.forEach(dia => {
+        if (Array.isArray(dia.ventasDetalle)) {
+            dia.ventasDetalle.forEach(v => {
+                if (v && typeof v === 'object' && v.detalle) procesarDetalle(v.detalle);
+            });
+        }
+    });
+
+    return Object.entries(conteo)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 6);
+}
+
+function renderChartTopProductos() {
+    const wrap = document.getElementById('chart-productos-wrap');
+    const canvasEl = document.getElementById('chart-productos-canvas');
+    const legendEl = document.getElementById('chart-productos-legend');
+    const emptyEl = document.getElementById('chart-productos-empty');
+    const innerEl = document.getElementById('chart-productos-inner');
+    if (!wrap || !canvasEl) return;
+
+    const top = calcularTopProductos();
+
+    if (top.length === 0 || typeof Chart === 'undefined') {
+        if (innerEl) innerEl.style.display = 'none';
+        if (emptyEl) emptyEl.style.display = 'block';
+        return;
+    }
+
+    if (innerEl) innerEl.style.display = 'flex';
+    if (emptyEl) emptyEl.style.display = 'none';
+
+    const paleta = ['#C9A44C', '#0A0A0B', '#34C759', '#FF9F0A', '#FF3B30', '#8E8E93'];
+    const labels = top.map(([n]) => n);
+    const values = top.map(([, c]) => c);
+    const totalVendidos = values.reduce((a, b) => a + b, 0);
+
+    // Destruir instancia previa antes de crear una nueva
+    if (chartProductos) {
+        try { chartProductos.destroy(); } catch (e) {}
+        chartProductos = null;
+    }
+
+    const isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+    chartProductos = new Chart(canvasEl, {
+        type: 'doughnut',
+        data: {
+            labels,
+            datasets: [{
+                data: values,
+                backgroundColor: paleta.slice(0, values.length),
+                borderColor: isDark ? '#1C1C1E' : '#FFFFFF',
+                borderWidth: 2,
+                hoverOffset: 6
+            }]
+        },
+        options: {
+            responsive: false,
+            cutout: '62%',
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: (ctx) => `${ctx.label}: ${ctx.parsed} vend.`
+                    }
+                }
+            },
+            animation: { animateRotate: true, duration: 700 }
+        }
+    });
+
+    // Leyenda custom
+    if (legendEl) {
+        legendEl.innerHTML = top.map(([nombre, cant], i) => {
+            const pct = totalVendidos > 0 ? Math.round((cant / totalVendidos) * 100) : 0;
+            return `
+                <div class="legend-row">
+                    <span class="legend-swatch" style="background:${paleta[i]}"></span>
+                    <span class="legend-name">${esc(nombre)}</span>
+                    <span class="legend-count">${cant} · ${pct}%</span>
+                </div>`;
+        }).join('');
+    }
 }
 
 function editarAcumuladoTotal(event) {
@@ -773,17 +889,18 @@ function aplicarPermisosRol() {
 
 function alternarRol() {
     if (rolActual === 'vendedor') {
-        // Abrir teclado numérico iOS in-page en vez del prompt() nativo
+        // Abrir teclado numérico iOS in-page. Callback devuelve true=cerrar, false=shake+reset
         abrirModalPin((pinIngresado) => {
             if (pinIngresado === PIN_ADMIN) {
                 rolActual = 'admin';
                 localStorage.setItem('zampa_rol', 'admin');
                 aplicarPermisosRol();
                 actualizarPantalla();
-                alert("🔓 ¡Modo Administrador activado!");
-            } else {
-                alert("❌ PIN incorrecto. Acceso denegado.");
+                setTimeout(() => alert("🔓 ¡Modo Administrador activado!"), 200);
+                return true;
             }
+            // PIN incorrecto → devolver false para que el modal haga shake
+            return false;
         });
     } else {
         if (confirm("¿Deseas bloquear la app y volver al Modo Vendedor (Ambulante)?")) {
@@ -806,6 +923,8 @@ function abrirModalPin(callback) {
     pinBufferActual = '';
     pinCallbackActual = callback;
     renderPinDots();
+    const dots = document.getElementById('pin-dots');
+    if (dots) dots.classList.remove('shake');
     const modal = document.getElementById('modal-pin');
     if (modal) modal.style.display = 'flex';
 }
@@ -827,8 +946,17 @@ function renderPinDots() {
     dotsWrap.innerHTML = html;
 }
 
+function shakePinDots() {
+    const dots = document.getElementById('pin-dots');
+    if (!dots) return;
+    dots.classList.remove('shake');
+    void dots.offsetWidth;
+    dots.classList.add('shake');
+    setTimeout(() => dots.classList.remove('shake'), 600);
+}
+
 function pinKeyPress(digit) {
-    vibrar(20);
+    vibrar(15);
     if (pinBufferActual.length >= 4) return;
     pinBufferActual += String(digit);
     renderPinDots();
@@ -837,16 +965,156 @@ function pinKeyPress(digit) {
         const cb = pinCallbackActual;
         const pin = pinBufferActual;
         setTimeout(() => {
-            cerrarModalPin();
-            if (typeof cb === 'function') cb(pin);
-        }, 180);
+            const result = (typeof cb === 'function') ? cb(pin) : true;
+            if (result === false) {
+                // PIN incorrecto: vibrar fuerte + shake + limpiar
+                vibrar([80, 50, 80, 50, 80]);
+                shakePinDots();
+                pinBufferActual = '';
+                setTimeout(renderPinDots, 550);
+            } else {
+                cerrarModalPin();
+            }
+        }, 160);
     }
 }
 
 function pinBorrar() {
-    vibrar(15);
+    vibrar(10);
     pinBufferActual = pinBufferActual.slice(0, -1);
     renderPinDots();
+}
+
+// ========================================================
+// 💳 DEUDORES / FIADOS (Solo sumar, solo pagar para eliminar)
+// ========================================================
+const RECARGO_DEUDA = 0.10; // 10%
+
+function renderDeudores() {
+    const listaEl = document.getElementById('lista-deudores');
+    const totalEl = document.getElementById('deuda-total-monto');
+    const countEl = document.getElementById('deuda-count-text');
+
+    if (!listaEl) return;
+
+    // Resumen total
+    const totalDeuda = deudores.reduce((s, d) => s + (parseFloat(d.monto) || 0), 0);
+    if (totalEl) totalEl.innerHTML = fmtMoney(totalDeuda);
+    if (countEl) {
+        const n = deudores.length;
+        countEl.innerHTML = n === 0
+            ? 'Sin fiados registrados'
+            : `${n} ${n === 1 ? 'persona fiada' : 'personas fiadas'}`;
+    }
+
+    if (deudores.length === 0) {
+        listaEl.innerHTML = `
+            <div class="empty-state" data-testid="empty-deudores">
+                <span class="material-icons-round">handshake</span>
+                Sin deudores registrados aún.
+            </div>`;
+        return;
+    }
+
+    listaEl.innerHTML = deudores.map(d => {
+        const fechaTxt = d.fechaCreacion || '—';
+        const veces = (d.movimientos && d.movimientos.length) || 1;
+        return `
+        <div class="deudor-card" data-testid="deudor-card-${d.id}">
+            <div class="deudor-header">
+                <div class="deudor-info">
+                    <span class="deudor-nombre">${esc(d.nombre)}</span>
+                    <div class="deudor-meta">
+                        <span class="material-icons-round">event</span>
+                        <span>Desde ${esc(fechaTxt)} · ${veces} ${veces === 1 ? 'movimiento' : 'movimientos'}</span>
+                    </div>
+                </div>
+                <div class="deudor-monto-total" data-testid="deudor-monto-${d.id}">${fmtMoney(d.monto)}</div>
+            </div>
+            <div class="deudor-actions">
+                <button class="btn-sumar-deuda" onclick="sumarDeudaAExistente(${d.id})" data-testid="btn-sumar-${d.id}">
+                    <span class="material-icons-round">add</span> Sumar deuda
+                </button>
+                <button class="btn-pagar-deuda" onclick="pagarDeuda(${d.id})" data-testid="btn-pagar-${d.id}">
+                    <span class="material-icons-round">check_circle</span> Pagó todo
+                </button>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function agregarDeudor() {
+    const nombreInp = document.getElementById('deudor-nombre');
+    const montoInp = document.getElementById('deudor-monto');
+    const nombre = (nombreInp.value || '').trim();
+    const montoBase = parseFloat(montoInp.value);
+
+    if (!nombre || isNaN(montoBase) || montoBase <= 0) {
+        return alert("Ingresa nombre y monto válido mayor a 0.");
+    }
+
+    const montoConRecargo = Math.round(montoBase * (1 + RECARGO_DEUDA));
+    const fechaHoy = new Date().toLocaleDateString('es-CO');
+
+    deudores.push({
+        id: Date.now(),
+        nombre,
+        monto: montoConRecargo,
+        fechaCreacion: fechaHoy,
+        movimientos: [{
+            fecha: fechaHoy,
+            hora: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            base: montoBase,
+            recargo: montoConRecargo - montoBase,
+            total: montoConRecargo,
+            tipo: 'inicial'
+        }]
+    });
+
+    guardarEnMemoria();
+    actualizarPantalla();
+    nombreInp.value = ''; montoInp.value = '';
+    mostrarToast(`✔ Deuda de ${nombre}: ${fmtMoney(montoConRecargo)} (base ${fmtMoney(montoBase)} + 10%)`, 'éxito', 4000);
+}
+
+function sumarDeudaAExistente(id) {
+    const d = deudores.find(x => x.id === id);
+    if (!d) return;
+
+    const nuevoStr = prompt(`Sumar deuda a "${d.nombre}"\n\nMonto adicional (se sumará +10% de recargo):`);
+    if (nuevoStr === null || nuevoStr.trim() === '') return;
+
+    const montoBase = parseFloat(nuevoStr.replace(/\D/g, ''));
+    if (isNaN(montoBase) || montoBase <= 0) return alert("Monto inválido.");
+
+    const montoConRecargo = Math.round(montoBase * (1 + RECARGO_DEUDA));
+    d.monto = (parseFloat(d.monto) || 0) + montoConRecargo;
+
+    if (!Array.isArray(d.movimientos)) d.movimientos = [];
+    d.movimientos.push({
+        fecha: new Date().toLocaleDateString('es-CO'),
+        hora: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        base: montoBase,
+        recargo: montoConRecargo - montoBase,
+        total: montoConRecargo,
+        tipo: 'suma'
+    });
+
+    guardarEnMemoria();
+    actualizarPantalla();
+    mostrarToast(`✔ +${fmtMoney(montoConRecargo)} a ${d.nombre}. Total: ${fmtMoney(d.monto)}`, 'éxito', 4000);
+}
+
+function pagarDeuda(id) {
+    const d = deudores.find(x => x.id === id);
+    if (!d) return;
+
+    if (!confirm(`¿"${d.nombre}" pagó COMPLETAMENTE la deuda de ${fmtMoney(d.monto)}?\n\nEsta es la única forma de eliminar la deuda.`)) return;
+
+    deudores = deudores.filter(x => x.id !== id);
+    guardarEnMemoria();
+    actualizarPantalla();
+    mostrarToast(`✅ ${d.nombre} pagó ${fmtMoney(d.monto)}. Deuda liquidada.`, 'éxito', 4000);
 }
 
 // ========================================================
