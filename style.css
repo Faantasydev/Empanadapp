@@ -1483,3 +1483,127 @@ button, .btn-primary, .dock-item, .product-card {
 
 /* Selection color */
 ::selection { background: var(--gold-soft); color: var(--gold-strong); }
+
+/* ============ 19. PIN KEYPAD (iOS Style) ============ */
+.pin-sheet {
+    padding-bottom: calc(22px + env(safe-area-inset-bottom)) !important;
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+    max-width: 380px;
+}
+
+.pin-lock-icon {
+    width: 54px;
+    height: 54px;
+    border-radius: 50%;
+    background: linear-gradient(180deg, var(--gold) 0%, var(--gold-strong) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 6px auto 12px;
+    box-shadow: 0 8px 20px -4px var(--gold-glow);
+}
+
+.pin-lock-icon .material-icons-round {
+    font-size: 26px;
+    color: #0A0A0B;
+}
+
+.pin-title {
+    text-align: center;
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--text-main);
+    letter-spacing: -0.4px;
+    margin-bottom: 4px;
+}
+
+.pin-subtitle {
+    text-align: center;
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-bottom: 20px;
+    font-weight: 500;
+}
+
+.pin-dots {
+    display: flex;
+    justify-content: center;
+    gap: 18px;
+    margin-bottom: 28px;
+}
+
+.pin-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: transparent;
+    border: 1.5px solid var(--text-muted);
+    transition: background 0.15s var(--ease-spring), border-color 0.15s ease, transform 0.15s var(--ease-spring);
+}
+
+.pin-dot.filled {
+    background: var(--gold);
+    border-color: var(--gold);
+    transform: scale(1.15);
+}
+
+.pin-keypad {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    max-width: 320px;
+    margin: 0 auto;
+}
+
+.pin-key {
+    height: 62px;
+    border-radius: var(--radius-pill);
+    background: var(--bg-input);
+    border: 0.5px solid var(--glass-border);
+    color: var(--text-main);
+    font-size: 26px;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    gap: 1px;
+    transition: transform 0.12s var(--ease-ios), background 0.15s ease;
+    -webkit-tap-highlight-color: transparent;
+    font-variant-numeric: tabular-nums;
+}
+
+.pin-key small {
+    font-size: 8.5px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-top: -1px;
+}
+
+.pin-key:active {
+    transform: scale(0.94);
+    background: var(--bg-elev-2);
+}
+
+.pin-key-cancel {
+    background: transparent;
+    border-color: transparent;
+    color: var(--text-secondary);
+    font-size: 15px;
+    font-weight: 600;
+}
+.pin-key-cancel:active { color: var(--danger); background: transparent; }
+
+.pin-key-del {
+    background: transparent;
+    border-color: transparent;
+    color: var(--text-main);
+}
+.pin-key-del .material-icons-round { font-size: 22px; }
+.pin-key-del:active { background: var(--bg-input); }

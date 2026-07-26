@@ -756,9 +756,9 @@ function aplicarPermisosRol() {
     if (btnInventario) btnInventario.style.display = esAdmin ? 'flex' : 'none';
     if (btnInsumos) btnInsumos.style.display = esAdmin ? 'flex' : 'none';
 
-    // Acumulado Total: siempre visible. Solo el click para editar queda gated al admin.
+    // Acumulado Total: solo visible en Modo Admin (privacidad frente a vendedores).
     const saldoGranTotal = document.getElementById('saldo-gran-total');
-    if (saldoGranTotal) saldoGranTotal.style.display = 'block';
+    if (saldoGranTotal) saldoGranTotal.style.display = esAdmin ? 'block' : 'none';
 
     const pantallaInv = document.getElementById('pantalla-inventario');
     const pantallaIns = document.getElementById('pantalla-insumos');
@@ -773,16 +773,18 @@ function aplicarPermisosRol() {
 
 function alternarRol() {
     if (rolActual === 'vendedor') {
-        const pinIngresado = prompt("🔐 Ingresa el PIN de Administrador (4 dígitos):");
-        if (pinIngresado === PIN_ADMIN) {
-            rolActual = 'admin';
-            localStorage.setItem('zampa_rol', 'admin');
-            aplicarPermisosRol();
-            actualizarPantalla();
-            alert("🔓 ¡Modo Administrador activado!");
-        } else if (pinIngresado !== null) {
-            alert("❌ PIN incorrecto. Acceso denegado.");
-        }
+        // Abrir teclado numérico iOS in-page en vez del prompt() nativo
+        abrirModalPin((pinIngresado) => {
+            if (pinIngresado === PIN_ADMIN) {
+                rolActual = 'admin';
+                localStorage.setItem('zampa_rol', 'admin');
+                aplicarPermisosRol();
+                actualizarPantalla();
+                alert("🔓 ¡Modo Administrador activado!");
+            } else {
+                alert("❌ PIN incorrecto. Acceso denegado.");
+            }
+        });
     } else {
         if (confirm("¿Deseas bloquear la app y volver al Modo Vendedor (Ambulante)?")) {
             rolActual = 'vendedor';
@@ -792,6 +794,59 @@ function alternarRol() {
             alert("🔒 Modo Vendedor activado.");
         }
     }
+}
+
+// ========================================================
+// 🔢 TECLADO NUMÉRICO iOS PARA PIN (in-page, sin prompt nativo)
+// ========================================================
+let pinBufferActual = '';
+let pinCallbackActual = null;
+
+function abrirModalPin(callback) {
+    pinBufferActual = '';
+    pinCallbackActual = callback;
+    renderPinDots();
+    const modal = document.getElementById('modal-pin');
+    if (modal) modal.style.display = 'flex';
+}
+
+function cerrarModalPin() {
+    const modal = document.getElementById('modal-pin');
+    if (modal) modal.style.display = 'none';
+    pinBufferActual = '';
+    pinCallbackActual = null;
+}
+
+function renderPinDots() {
+    const dotsWrap = document.getElementById('pin-dots');
+    if (!dotsWrap) return;
+    let html = '';
+    for (let i = 0; i < 4; i++) {
+        html += `<span class="pin-dot ${i < pinBufferActual.length ? 'filled' : ''}"></span>`;
+    }
+    dotsWrap.innerHTML = html;
+}
+
+function pinKeyPress(digit) {
+    vibrar(20);
+    if (pinBufferActual.length >= 4) return;
+    pinBufferActual += String(digit);
+    renderPinDots();
+    // Auto-submit al llegar a 4 dígitos
+    if (pinBufferActual.length === 4) {
+        const cb = pinCallbackActual;
+        const pin = pinBufferActual;
+        setTimeout(() => {
+            cerrarModalPin();
+            if (typeof cb === 'function') cb(pin);
+        }, 180);
+    }
+}
+
+function pinBorrar() {
+    vibrar(15);
+    pinBufferActual = pinBufferActual.slice(0, -1);
+    renderPinDots();
 }
 
 // ========================================================

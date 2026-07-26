@@ -273,6 +273,43 @@
         </div>
     </div>
 
+    <!-- ==================== MODAL PIN ADMIN (Teclado Numérico iOS) ==================== -->
+    <div id="modal-pin" class="modal-overlay" data-testid="modal-pin">
+        <div class="modal-sheet pin-sheet">
+            <div class="modal-grabber"></div>
+
+            <div class="pin-lock-icon">
+                <span class="material-icons-round">lock</span>
+            </div>
+            <h3 class="pin-title">Modo Administrador</h3>
+            <p class="pin-subtitle">Ingresa el PIN de 4 dígitos</p>
+
+            <div id="pin-dots" class="pin-dots" data-testid="pin-dots">
+                <span class="pin-dot"></span>
+                <span class="pin-dot"></span>
+                <span class="pin-dot"></span>
+                <span class="pin-dot"></span>
+            </div>
+
+            <div class="pin-keypad" data-testid="pin-keypad">
+                <button type="button" class="pin-key" onclick="pinKeyPress(1)" data-testid="pin-key-1">1</button>
+                <button type="button" class="pin-key" onclick="pinKeyPress(2)" data-testid="pin-key-2">2<small>ABC</small></button>
+                <button type="button" class="pin-key" onclick="pinKeyPress(3)" data-testid="pin-key-3">3<small>DEF</small></button>
+                <button type="button" class="pin-key" onclick="pinKeyPress(4)" data-testid="pin-key-4">4<small>GHI</small></button>
+                <button type="button" class="pin-key" onclick="pinKeyPress(5)" data-testid="pin-key-5">5<small>JKL</small></button>
+                <button type="button" class="pin-key" onclick="pinKeyPress(6)" data-testid="pin-key-6">6<small>MNO</small></button>
+                <button type="button" class="pin-key" onclick="pinKeyPress(7)" data-testid="pin-key-7">7<small>PQRS</small></button>
+                <button type="button" class="pin-key" onclick="pinKeyPress(8)" data-testid="pin-key-8">8<small>TUV</small></button>
+                <button type="button" class="pin-key" onclick="pinKeyPress(9)" data-testid="pin-key-9">9<small>WXYZ</small></button>
+                <button type="button" class="pin-key pin-key-cancel" onclick="cerrarModalPin()" data-testid="pin-key-cancel">Cancelar</button>
+                <button type="button" class="pin-key" onclick="pinKeyPress(0)" data-testid="pin-key-0">0</button>
+                <button type="button" class="pin-key pin-key-del" onclick="pinBorrar()" data-testid="pin-key-del">
+                    <span class="material-icons-round">backspace</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- ==================== NAV SCRIPT ==================== -->
     <script>
         const ordenPestanas = ['pantalla-ventas', 'pantalla-inventario', 'pantalla-insumos', 'pantalla-pagos'];
