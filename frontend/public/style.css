@@ -1185,7 +1185,7 @@ button, input, select, textarea {
     background: var(--overlay);
     -webkit-backdrop-filter: blur(8px);
     backdrop-filter: blur(8px);
-    z-index: 1000;
+    z-index: 10000; /* above floating dock (9999) so 'Cerrar' is tappable */
     align-items: flex-end;
     justify-content: center;
     padding: 0;
