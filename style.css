@@ -1,5 +1,5 @@
 /* =========================================
-   ESTILOS GENERALES ZAMPA
+   1. ESTILOS GENERALES Y RESET
    ========================================= */
 * {
     box-sizing: border-box;
@@ -21,7 +21,7 @@ button, input, select, textarea {
 }
 
 /* =========================================
-   BARRA SUPERIOR (HEADER) CORREGIDA
+   2. BARRA SUPERIOR (HEADER)
    ========================================= */
 .header-control {
     position: sticky;
@@ -33,8 +33,8 @@ button, input, select, textarea {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    box-shadow: none; /* Quitamos cualquier sombra que genere división */
-    border: none; /* Aseguramos que no haya bordes */
+    box-shadow: none;
+    border: none;
     width: 100%;
     box-sizing: border-box;
     margin-top: 0;
@@ -61,23 +61,17 @@ button, input, select, textarea {
 }
 
 /* =========================================
-   CONTENEDOR PRINCIPAL
+   3. CONTENEDOR PRINCIPAL Y PESTAÑAS
    ========================================= */
 .container {
     max-width: 480px;
     margin: 0 auto;
-    padding: 15px;
+    padding: 8px 15px 90px 15px; /* Reducido el padding superior inicial para evitar espacios vacíos */
     position: relative;
     z-index: 1;
     overflow: hidden;
-    padding-bottom: 90px;
-    padding-top: 75px; /* Ajustado exactamente para la nueva barra superior compacta */
 }
 
-
-/* =========================================
-   ESTÉTICA DE LIBRETA Y ANIMACIONES
-   ========================================= */
 .pestana-contenido {
     display: none;
     background-color: transparent;
@@ -90,6 +84,7 @@ button, input, select, textarea {
     display: block;
 }
 
+/* Animaciones de pestañas */
 .animar-adelante {
     animation: deslizarDerecha 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }
@@ -109,7 +104,7 @@ button, input, select, textarea {
 }
 
 /* =========================================
-   TARJETAS Y COMPONENTES
+   4. TARJETAS Y COMPONENTES
    ========================================= */
 .card {
     background: white;
@@ -129,18 +124,58 @@ button, input, select, textarea {
     gap: 8px;
 }
 
-.card h2 .material-icons { font-size: 20px; }
+.card h2 .material-icons { 
+    font-size: 20px; 
+}
 
+/* Tarjeta de Balance (Ajustada con Flexbox para eliminar espacios extra) */
 .balance-card {
     background: linear-gradient(135deg, #00b0ff, #0091ea);
     color: white;
     text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 6px; /* Espaciado uniforme y controlado entre elementos */
+    padding: 16px;
+    margin-top: 4px; /* Pegado armónicamente al header */
+    margin-bottom: 16px;
 }
-.balance-title { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; opacity: 0.9; }
-#balance-total { font-size: 32px; font-weight: bold; margin-top: 5px; }
 
-.grupo-input { margin-bottom: 12px; }
-.grupo-input.row { display: flex; gap: 10px; }
+.balance-title { 
+    font-size: 11px; 
+    text-transform: uppercase; 
+    letter-spacing: 1px; 
+    opacity: 0.9; 
+    margin: 0;
+}
+
+#balance-total { 
+    font-size: 32px; 
+    font-weight: bold; 
+    margin: 0; 
+}
+
+/* Contenedor del acumulado total para que colapse perfectamente si se oculta */
+#saldo-gran-total {
+    font-size: 13px;
+    opacity: 0.95;
+    margin: 2px 0;
+}
+
+/* =========================================
+   5. FORMULARIOS E INPUTS
+   ========================================= */
+.grupo-input { 
+    margin-bottom: 12px; 
+}
+
+.grupo-input.row { 
+    display: flex; 
+    gap: 10px; 
+}
+
 .grupo-input input {
     width: 100%;
     padding: 12px;
@@ -150,8 +185,15 @@ button, input, select, textarea {
     outline: none;
     background-color: #fafafa;
 }
-.grupo-input input:focus { border-color: #0288d1; background-color: #fff; }
 
+.grupo-input input:focus { 
+    border-color: #0288d1; 
+    background-color: #fff; 
+}
+
+/* =========================================
+   6. BOTONES
+   ========================================= */
 .btn-material {
     background-color: #0288d1;
     color: white;
@@ -169,7 +211,10 @@ button, input, select, textarea {
     gap: 5px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
-.btn-material:active { background-color: #01579b; }
+
+.btn-material:active { 
+    background-color: #01579b; 
+}
 
 .btn-venta {
     background-color: #26a69a;
@@ -177,36 +222,10 @@ button, input, select, textarea {
     font-size: 12px;
     width: auto;
 }
-.btn-venta:active { background-color: #00695c; }
 
-.item-fila {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px 0;
-    border-bottom: 1px solid #e1f5fe;
+.btn-venta:active { 
+    background-color: #00695c; 
 }
-.item-fila:last-child { border-bottom: none; }
-.item-info .nombre { font-weight: 500; font-size: 15px; color: #37474f; }
-.item-info .meta { font-size: 12px; color: #78909c; margin-top: 2px; }
-
-.badge-stock {
-    background-color: #e1f5fe;
-    color: #0288d1;
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-size: 11px;
-    font-weight: bold;
-}
-.badge-stock.agotado { background-color: #ffebee; color: #c62828; }
-
-.factura-item {
-    padding: 10px 0;
-    border-bottom: 1px dashed #b3e5fc;
-    font-size: 13px;
-    color: #37474f;
-}
-.factura-item span { color: #78909c; float: right; }
 
 .btn-eliminar {
     background-color: #ef5350;
@@ -214,7 +233,10 @@ button, input, select, textarea {
     width: auto;
     min-width: 40px;
 }
-.btn-eliminar:active { background-color: #c62828; }
+
+.btn-eliminar:active { 
+    background-color: #c62828; 
+}
 
 .btn-deshacer {
     color: #ef5350;
@@ -226,7 +248,67 @@ button, input, select, textarea {
     vertical-align: middle;
 }
 
-.qr-container { text-align: center; padding: 10px; }
+/* =========================================
+   7. LISTAS E ITEMS
+   ========================================= */
+.item-fila {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid #e1f5fe;
+}
+
+.item-fila:last-child { 
+    border-bottom: none; 
+}
+
+.item-info .nombre { 
+    font-weight: 500; 
+    font-size: 15px; 
+    color: #37474f; 
+}
+
+.item-info .meta { 
+    font-size: 12px; 
+    color: #78909c; 
+    margin-top: 2px; 
+}
+
+.badge-stock {
+    background-color: #e1f5fe;
+    color: #0288d1;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: bold;
+}
+
+.badge-stock.agotado { 
+    background-color: #ffebee; 
+    color: #c62828; 
+}
+
+.factura-item {
+    padding: 10px 0;
+    border-bottom: 1px dashed #b3e5fc;
+    font-size: 13px;
+    color: #37474f;
+}
+
+.factura-item span { 
+    color: #78909c; 
+    float: right; 
+}
+
+/* =========================================
+   8. SECCIÓN CÓDIGO QR
+   ========================================= */
+.qr-container { 
+    text-align: center; 
+    padding: 10px; 
+}
+
 .qr-imagen { 
     max-width: 280px;
     width: 100%; 
@@ -236,10 +318,15 @@ button, input, select, textarea {
     background-color: #fff; 
     box-shadow: 0 4px 10px rgba(0,0,0,0.1);
 }
-.qr-instrucciones { font-size: 13px; color: #546e7a; line-height: 1.4; }
+
+.qr-instrucciones { 
+    font-size: 13px; 
+    color: #546e7a; 
+    line-height: 1.4; 
+}
 
 /* =========================================
-   DOCK INFERIOR (FIJO Y HORIZONTAL)
+   9. DOCK INFERIOR (NAVEGACIÓN FIJA)
    ========================================= */
 .dock-inferior {
     position: fixed !important;
@@ -282,7 +369,7 @@ button, input, select, textarea {
 }
 
 /* =========================================
-   ESTADOS DE LA NUBE Y INDICADORES
+   10. INDICADORES DE NUBE
    ========================================= */
 #icono-nube {
     font-size: 22px;
@@ -300,7 +387,7 @@ button, input, select, textarea {
 }
 
 /* =========================================
-   PANTALLA DE CARGA (SPLASH SCREEN)
+   11. PANTALLA DE CARGA (SPLASH SCREEN)
    ========================================= */
 #splash-screen {
     position: fixed;
@@ -358,9 +445,9 @@ button, input, select, textarea {
     visibility: hidden;
 }
 
-/* ========================================================
-   🌙 UX NOCTURNO, ÁREAS DE TOQUE Y EFECTOS TÁCTILES
-   ======================================================== */
+/* =========================================
+   12. UX, TACTIL Y ACCESIBILIDAD MÓVIL
+   ========================================= */
 button, .btn-material, .dock-item, .item-fila, #balance-total {
     min-height: 48px;
     touch-action: manipulation;
@@ -371,13 +458,14 @@ button, .btn-material, .dock-item, .item-fila, #balance-total {
     50% { transform: scale(0.94); }
     100% { transform: scale(1); }
 }
+
 .efecto-toque {
     animation: toque-pulse 0.15s ease-in-out;
 }
 
-/* ========================================================
-   🍞 SISTEMA DE TOASTS FLOTANTES
-   ======================================================== */
+/* =========================================
+   13. SISTEMA DE TOASTS FLOTANTES
+   ========================================= */
 #toast-container {
     position: fixed;
     bottom: 80px;
