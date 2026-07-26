@@ -1192,6 +1192,15 @@ button, input, select, textarea {
     animation: overlayFade 0.25s ease;
 }
 
+/* Hide floating dock when a modal is open for cleaner iOS-like UX */
+body:has(.modal-overlay[style*="display: flex"]) .dock-inferior,
+body:has(.modal-overlay[style*="display:flex"]) .dock-inferior {
+    opacity: 0;
+    transform: translateY(20px);
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.25s var(--ease-ios);
+}
+
 @keyframes overlayFade {
     0% { opacity: 0; }
     100% { opacity: 1; }
