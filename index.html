@@ -20,12 +20,13 @@
     </div>
 
     <header class="header-control">
-        <div class="header-main">
-            <img src="logo-zampa.png" alt="Zampa Logo" class="logo-zampa">
-            <span id="icono-nube" class="material-icons nube-sincronizada" title="Estado de sincronización">cloud</span>
-        </div>
-        <p class="header-subtitle">Punto de Venta e Inventario</p>
-    </header>
+    <div class="header-main">
+        <img src="logo-zampa.png" alt="Zampa Logo" class="logo-zampa">
+        <span id="icono-rol" class="material-icons" style="cursor: pointer; margin-left: auto; margin-right: 10px; font-size: 28px; color: #fff;" onclick="alternarRol()" title="Cambiar Rol">badge</span>
+        <span id="icono-nube" class="material-icons nube-sincronizada" title="Estado de sincronización">cloud</span>
+    </div>
+    <p class="header-subtitle">Punto de Venta e Inventario</p>
+</header>
 
     <div class="container">
         
@@ -39,11 +40,14 @@
     
     <div id="saldo-gran-total" style="font-size: 14px; opacity: 0.9; margin-top: 6px; font-weight: normal;">Acumulado Total: $0</div>
     
-    <div style="margin-top: 16px; display: flex; justify-content: center; width: 100%;">
-        <span style="cursor: pointer; display: inline-flex; align-items: center; gap: 5px; font-size: 13px; opacity: 0.95; padding: 6px 16px; background: rgba(255, 255, 255, 0.2); border-radius: 20px; font-weight: 500; transition: background 0.2s;" onclick="event.stopPropagation(); cerrarCaja();">
-            <span class="material-icons" style="font-size: 16px;">autorenew</span> Cerrar Caja
-        </span>
-    </div>
+    <div style="margin-top: 16px; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; width: 100%;">
+    <span style="cursor: pointer; display: inline-flex; align-items: center; gap: 5px; font-size: 13px; opacity: 0.95; padding: 6px 14px; background: rgba(255, 255, 255, 0.2); border-radius: 20px; font-weight: 500;" onclick="event.stopPropagation(); cerrarCaja();">
+        <span class="material-icons" style="font-size: 16px;">autorenew</span> Cerrar Caja
+    </span>
+    <span style="cursor: pointer; display: inline-flex; align-items: center; gap: 5px; font-size: 13px; opacity: 0.95; padding: 6px 14px; background: #25D366; color: white; border-radius: 20px; font-weight: bold; box-shadow: 0 2px 6px rgba(0,0,0,0.2);" onclick="event.stopPropagation(); enviarReporteWhatsApp();">
+        <span class="material-icons" style="font-size: 16px;">share</span> WhatsApp
+    </span>
+</div>
 
 </div>
         
@@ -163,23 +167,23 @@
     </div>
 
     <div class="dock-inferior">
-        <button class="dock-item activo" onclick="cambiarPestaña('pantalla-ventas', this)">
-            <span class="material-icons">point_of_sale</span>
-            <span>Ventas</span>
-        </button>
-        <button class="dock-item" onclick="cambiarPestaña('pantalla-inventario', this)">
-            <span class="material-icons">inventory_2</span>
-            <span>Inventario</span>
-        </button>
-        <button class="dock-item" onclick="cambiarPestaña('pantalla-insumos', this)">
-            <span class="material-icons">layers</span>
-            <span>Insumos</span>
-        </button>
-        <button class="dock-item" onclick="cambiarPestaña('pantalla-pagos', this)">
-            <span class="material-icons">qr_code</span>
-            <span>QR Pago</span>
-        </button>
-    </div>
+    <button class="dock-item activo" onclick="cambiarPestaña('pantalla-ventas', this)">
+        <span class="material-icons">point_of_sale</span>
+        <span>Ventas</span>
+    </button>
+    <button id="dock-inventario" class="dock-item" onclick="cambiarPestaña('pantalla-inventario', this)">
+        <span class="material-icons">inventory_2</span>
+        <span>Inventario</span>
+    </button>
+    <button id="dock-insumos" class="dock-item" onclick="cambiarPestaña('pantalla-insumos', this)">
+        <span class="material-icons">layers</span>
+        <span>Insumos</span>
+    </button>
+    <button class="dock-item" onclick="cambiarPestaña('pantalla-pagos', this)">
+        <span class="material-icons">qr_code</span>
+        <span>QR Pago</span>
+    </button>
+</div>
 
     <div id="modal-historial-cierres" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
         <div style="background: white; width: 90%; max-width: 360px; padding: 20px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); box-sizing: border-box;">

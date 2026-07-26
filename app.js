@@ -589,3 +589,128 @@ function sumarAlBalance(event) {
         }
     }
 }
+
+// ========================================================
+// 🔐 GESTIÓN DE ROLES Y SEGURIDAD (MODO VENDEDOR / ADMIN)
+// ========================================================
+const PIN_ADMIN = "1234"; // 💡 Puedes cambiar este PIN de 4 dígitos por el que desees
+let rolActual = localStorage.getItem('zampa_rol') || 'vendedor'; // Por defecto, inicia protegido como Vendedor
+
+function aplicarPermisosRol() {
+    const esAdmin = (rolActual === 'admin');
+    const iconoRol = document.getElementById('icono-rol');
+    
+    // Cambiar ícono y color en el header según el rol
+    if (iconoRol) {
+        iconoRol.innerText = esAdmin ? 'admin_panel_settings' : 'badge';
+        iconoRol.style.color = esAdmin ? '#ffeb3b' : '#ffffff';
+        iconoRol.title = esAdmin ? 'Modo Administrador (Toca para cambiar)' : 'Modo Vendedor (Toca para entrar con PIN)';
+    }
+
+    // Ocultar o mostrar pestañas sensibles en el Dock inferior
+    const btnInventario = document.getElementById('dock-inventario');
+    const btnInsumos = document.getElementById('dock-insumos');
+    if (btnInventario) btnInventario.style.display = esAdmin ? 'flex' : 'none';
+    if (btnInsumos) btnInsumos.style.display = esAdmin ? 'flex' : 'none';
+
+    // Ocultar el Acumulado Total al vendedor (solo ve lo que hace en su noche)
+    const saldoGranTotal = document.getElementById('saldo-gran-total');
+    if (saldoGranTotal) saldoGranTotal.style.display = esAdmin ? 'block' : 'none';
+
+    // Si el vendedor está en una pestaña prohibida al cambiar de rol, expulsarlo a Ventas
+    if (!esAdmin && (document.getElementById('pantalla-inventario').classList.contains('activa') || 
+                     document.getElementById('pantalla-insumos').classList.contains('activa'))) {
+        const btnVentas = document.querySelector('.dock-item');
+        if (typeof cambiarPestaña === 'function') cambiarPestaña('pantalla-ventas', btnVentas);
+    }
+}
+
+function alternarRol() {
+    if (rolActual === 'vendedor') {
+        const pinIngresado = prompt("🔐 Ingresa el PIN de Administrador (4 dígitos):");
+        if (pinIngresado === PIN_ADMIN) {
+            rolActual = 'admin';
+            localStorage.setItem('zampa_rol', 'admin');
+            aplicarPermisosRol();
+            actualizarPantalla();
+            alert("🔓 ¡Modo Administrador activado! Ahora tienes acceso al inventario y costos.");
+        } else if (pinIngresado !== null) {
+            alert("❌ PIN incorrecto. Acceso denegado.");
+        }
+    } else {
+        if (confirm("¿Deseas bloquear la app y volver al Modo Vendedor (Ambulante)?")) {
+            rolActual = 'vendedor';
+            localStorage.setItem('zampa_rol', 'vendedor');
+            aplicarPermisosRol();
+            actualizarPantalla();
+            alert("🔒 Modo Vendedor activado. Pestañas sensibles ocultas.");
+        }
+    }
+}
+
+// Ejecutar permisos inmediatamente al cargar la app y cada vez que se actualiza la pantalla
+document.addEventListener("DOMContentLoaded", aplicarPermisosRol);
+const _actualizarPantallaOriginal = typeof actualizarPantalla === 'function' ? actualizarPantalla : null;
+actualizarPantalla = function() {
+    if (_actualizarPantallaOriginal) _actualizarPantallaOriginal();
+    aplicarPermisosRol();
+};
+
+
+// ========================================================
+// 📲 REPORTE INTELIGENTE POR WHATSAPP (CIERRE DE TURNO)
+// ========================================================
+function enviarReporteWhatsApp() {
+    // 1. Validar que haya información para reportar
+    if (balance <= 0 && historial.length === 0) {
+        return alert("⚠️ No hay ventas registradas hoy para generar un reporte de cierre.");
+    }
+
+    // 2. Pedir o recuperar el número del dueño desde la memoria (solo lo pide la primera vez)
+    let telefonoDueño = localStorage.getItem('zampa_telefono_dueño');
+    if (!telefonoDueño) {
+        telefonoDueño = prompt("📱 Ingresa el número de WhatsApp del dueño con código de país (Ej: 573001234567 para Colombia):");
+        if (!telefonoDueño || telefonoDueño.trim() === "") return;
+        telefonoDueño = telefonoDueño.replace(/\D/g, ''); // Limpiar símbolos y espacios
+        localStorage.setItem('zampa_telefono_dueño', telefonoDueño);
+    }
+
+    // 3. Procesar el historial para contar cuántas empanadas se vendieron por sabor
+    let conteoVentas = {};
+    historial.forEach(venta => {
+        // Separa ítems si fue un combo o venta múltiple (Ej: "2 Empanada de carne, 1 Limonada")
+        let items = venta.detalle.split(", ");
+        items.forEach(item => {
+            let partes = item.trim().split(" ");
+            let cantidad = parseInt(partes[0]) || 1;
+            let nombreProducto = partes.slice(1).join(" ");
+            conteoVentas[nombreProducto] = (conteoVentas[nombreProducto] || 0) + cantidad;
+        });
+    });
+
+    // 4. Formatear la lista de productos vendidos
+    let detalleVentasTexto = "";
+    for (let [nombre, cant] of Object.entries(conteoVentas)) {
+        detalleVentasTexto += `▪️ *${cant}x* ${nombre}\n`;
+    }
+    if (detalleVentasTexto === "") detalleVentasTexto = "▪️ Sin detalle individual\n";
+
+    // 5. Formatear el stock sobrante devuelto en la cava
+    let detalleStockTexto = inventario.map(prod => `▪️ ${prod.nombre}: *${prod.stock} disp.*`).join('\n');
+
+    // 6. Construir el cuerpo del mensaje
+    const ahora = new Date();
+    const fechaStr = ahora.toLocaleDateString('es-CO') + " - " + ahora.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    let mensaje = `🌙 *REPORTE DE CIERRE - ZAMPA* 🥟\n` +
+                  `📅 *Fecha:* ${fechaStr}\n` +
+                  `👤 *Turno:* ${rolActual === 'admin' ? 'Administrador' : 'Vendedor Ambulante'}\n\n` +
+                  `💰 *DINERO EN CAJA: $${balance.toLocaleString('es-CO')}*\n\n` +
+                  `🔥 *PRODUCTOS VENDIDOS:*\n${detalleVentasTexto}\n` +
+                  `📦 *STOCK SOBRANTE (EN CAVA):*\n${detalleStockTexto}\n\n` +
+                  `🚀 _Generado desde Zampa POS_`;
+
+    // 7. Abrir WhatsApp con el texto codificado
+    const url = `https://api.whatsapp.com/send?phone=${telefonoDueño}&text=${encodeURIComponent(mensaje)}`;
+    window.open(url, '_blank');
+}
