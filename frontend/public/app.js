@@ -140,7 +140,11 @@ function actualizarPantalla() {
 
     const divGranTotal = document.getElementById('saldo-gran-total');
     if (divGranTotal) {
-        divGranTotal.innerHTML = `Acumulado Total: <span onclick="editarAcumuladoTotal(event)" data-testid="acumulado-editable">${fmtMoney(saldoGranTotal)}</span>`;
+        const esAdminNow = (rolActual === 'admin');
+        const inner = esAdminNow
+            ? `<span onclick="editarAcumuladoTotal(event)" data-testid="acumulado-editable" title="Toca para editar">${fmtMoney(saldoGranTotal)}</span>`
+            : `<span data-testid="acumulado-editable">${fmtMoney(saldoGranTotal)}</span>`;
+        divGranTotal.innerHTML = `Acumulado Total: ${inner}`;
     }
 
     // ------- Lista de Ventas (Productos como tarjetas iOS) -------
@@ -752,8 +756,9 @@ function aplicarPermisosRol() {
     if (btnInventario) btnInventario.style.display = esAdmin ? 'flex' : 'none';
     if (btnInsumos) btnInsumos.style.display = esAdmin ? 'flex' : 'none';
 
+    // Acumulado Total: siempre visible. Solo el click para editar queda gated al admin.
     const saldoGranTotal = document.getElementById('saldo-gran-total');
-    if (saldoGranTotal) saldoGranTotal.style.display = esAdmin ? 'block' : 'none';
+    if (saldoGranTotal) saldoGranTotal.style.display = 'block';
 
     const pantallaInv = document.getElementById('pantalla-inventario');
     const pantallaIns = document.getElementById('pantalla-insumos');
