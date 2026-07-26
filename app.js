@@ -355,6 +355,10 @@ function cerrarModalVueltos() { document.getElementById('modal-vueltos').style.d
 function finalizarVentaConVueltos() { cerrarModalVueltos(); if (typeof callbackConfirmarVenta === 'function') callbackConfirmarVenta(); }
 
 function agregarAlCarrito(id) {
+    // ⚡ AGREGAR ESTAS DOS LÍNEAS AQUÍ:
+    vibrar(30); // Vibra en el dedo al tocar "AGREGAR"
+    efectoVisualToque(event?.target); // Hace que el botón verde rebote
+
     const producto = inventario.find(p => p.id === id);
     if (!producto) return;
     const enCarritoActual = carrito.filter(p => p.id === id).length;
@@ -561,15 +565,17 @@ function agregarDiaDeLibreta() {
 // 💰 FUNCIÓN PARA SUMAR MANUALMENTE AL BALANCE (CORREGIDA)
 // ========================================================
 function sumarAlBalance(event) {
-    // 1. Bloqueamos cualquier toque accidental hacia la tarjeta de atrás
     if (event) {
         event.stopPropagation();
         event.preventDefault();
     }
+    
+    // ⚡ AGREGAR ESTAS DOS LÍNEAS AQUÍ:
+    vibrar(40); // Tick físico al tocar el número grande
+    efectoVisualToque(document.getElementById("balance-total")); // El número hace un rebote en pantalla
 
-    // 2. Mostramos la ventana pidiendo el monto
     let cantidadIngresada = prompt("¿Cuánto deseas sumar al balance de hoy?");
-
+    
     // 3. Verificamos que no se haya cancelado
     if (cantidadIngresada !== null && cantidadIngresada.trim() !== "") {
         
@@ -714,3 +720,76 @@ function enviarReporteWhatsApp() {
     const url = `https://api.whatsapp.com/send?phone=${telefonoDueño}&text=${encodeURIComponent(mensaje)}`;
     window.open(url, '_blank');
 }
+
+// ========================================================
+// ⚡ MOTOR DE VIBRACIÓN Y TOASTS FLOTANTES (UX CALLE)
+// ========================================================
+
+// 1. Motor Hápico: Genera un "tick" físico en el teléfono del vendedor
+function vibrar(patron = 35) {
+    if ("vibrate" in navigator) {
+        try {
+            navigator.vibrate(patron); // 35ms da un golpe seco y fino tipo iPhone/Android Pro
+        } catch (e) {
+            // Ignorar si el navegador o el modo ahorro de batería bloquean la vibración
+        }
+    }
+}
+
+// 2. Efecto visual de rebote en pantalla
+function efectoVisualToque(elemento) {
+    if (!elemento) return;
+    elemento.classList.remove('efecto-toque');
+    void elemento.offsetWidth; // Forzar reinicio de animación CSS
+    elemento.classList.add('efecto-toque');
+}
+
+// 3. Creador de Toasts (Notificaciones suaves abajo)
+function mostrarToast(mensaje, tipo = 'info', duracion = 3000) {
+    // Si es error vibra 3 veces rápido, si es normal vibra un tick seco
+    vibrar(tipo === 'error' ? [50, 40, 50] : 35);
+
+    // Crea el contenedor en el HTML automáticamente si no existe
+    let container = document.getElementById('toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'toast-container';
+        document.body.appendChild(container);
+    }
+
+    const toast = document.createElement('div');
+    toast.className = `toast ${tipo}`;
+    
+    // Asignar ícono automático
+    let icono = 'info';
+    if (tipo === 'éxito') icono = 'check_circle';
+    if (tipo === 'error') icono = 'error';
+    if (tipo === 'alerta') icono = 'warning';
+
+    toast.innerHTML = `<span class="material-icons" style="font-size:22px;">${icono}</span> <span style="flex:1;">${mensaje}</span>`;
+    container.appendChild(toast);
+
+    // Animación de entrada y salida
+    setTimeout(() => toast.classList.add('mostrar'), 10);
+    setTimeout(() => {
+        toast.classList.remove('mostrar');
+        setTimeout(() => toast.remove(), 300);
+    }, duracion);
+}
+
+// 4. SOBREESCRITURA MAGICA: Convierte todos tus viejos alert() en Toasts
+window.alert = function(mensaje) {
+    let tipo = 'info';
+    let msgMin = String(mensaje).toLowerCase();
+    
+    // Autodetectar el color del aviso según las palabras
+    if (msgMin.includes('error') || msgMin.includes('inválido') || msgMin.includes('incorrecto') || msgMin.includes('falta') || msgMin.includes('denegado') || msgMin.includes('no hay')) {
+        tipo = 'error';
+    } else if (msgMin.includes('éxito') || msgMin.includes('correctamente') || msgMin.includes('activado') || msgMin.includes('cerrada') || msgMin.includes('acumulada')) {
+        tipo = 'éxito';
+    } else if (msgMin.includes('⚠️') || msgMin.includes('paga')) {
+        tipo = 'alerta';
+    }
+    
+    mostrarToast(mensaje, tipo, 3500);
+};

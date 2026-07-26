@@ -367,3 +367,69 @@ button, input, select, textarea {
     opacity: 0;
     visibility: hidden;
 }
+
+/* ========================================================
+   🌙 UX NOCTURNO, ÁREAS DE TOQUE Y EFECTOS TÁCTILES
+   ======================================================== */
+
+/* 1. Seguridad ergonómica para dedos rápidos (Mínimo 48px) */
+button, .btn-material, .dock-item, .item-fila, #balance-total {
+    min-height: 48px;
+    touch-action: manipulation; /* Evita que la pantalla haga zoom accidental al tocar rápido */
+}
+
+/* 2. Efecto visual de rebote rápido al tocar un botón o el balance */
+@keyframes toque-pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(0.94); }
+    100% { transform: scale(1); }
+}
+.efecto-toque {
+    animation: toque-pulse 0.15s ease-in-out;
+}
+
+/* ========================================================
+   🍞 SISTEMA DE TOASTS FLOTANTES (REEMPLAZO DE ALERTS)
+   ======================================================== */
+#toast-container {
+    position: fixed;
+    bottom: 80px; /* Flota justo por encima de tu barra inferior (Dock) */
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 99999;
+    width: 90%;
+    max-width: 380px;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.toast {
+    background: #263238;
+    color: #ffffff;
+    padding: 14px 18px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 500;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.25s ease, transform 0.25s ease;
+    pointer-events: auto;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+.toast.mostrar {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Colores según el tipo de aviso */
+.toast.éxito { background: #1b5e20; border-left: 6px solid #a5d6a7; }
+.toast.error { background: #b71c1c; border-left: 6px solid #ef9a9a; }
+.toast.info  { background: #01579b; border-left: 6px solid #81d4fa; }
+.toast.alerta { background: #e65100; border-left: 6px solid #ffe082; }
