@@ -31,20 +31,21 @@
         
         <div id="pantalla-ventas" class="pestana-contenido activa">
             
-            <div class="card balance-card" onclick="mostrarHistorialCierres()" style="cursor: pointer;" title="Toca el fondo azul para ver historial de cierres">
-                <span class="balance-title">Balance de Ventas (Hoy)</span>
-                
-                <div id="balance-total" style="cursor: pointer; display: inline-block; padding: 4px 10px;" onclick="sumarAlBalance(event)" title="Toca para sumar al balance del día">$0</div>
-                
-                <div id="saldo-gran-total" style="font-size: 14px; opacity: 0.9; margin-top: 4px; font-weight: normal;">Acumulado Total: $0</div>
-                
-                <div style="margin-top: 10px; display: flex; justify-content: center; font-size: 13px;">
-                    <span style="cursor: pointer; display: flex; align-items: center; gap: 4px; opacity: 0.95; padding: 4px 12px; background: rgba(255,255,255,0.15); border-radius: 20px;" onclick="event.stopPropagation(); cerrarCaja();">
-                        <span class="material-icons" style="font-size: 16px;">autorenew</span> Cerrar Caja
-                    </span>
-                </div>
-            </div>
-            
+            <div class="card balance-card" onclick="mostrarHistorialCierres()" style="cursor: pointer; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 22px 15px;">
+    
+    <span class="balance-title" style="font-size: 13px; letter-spacing: 1px; text-transform: uppercase; opacity: 0.9; margin-bottom: 6px; display: block; width: 100%;">BALANCE DE VENTAS (HOY)</span>
+    
+    <div id="balance-total" style="cursor: pointer; font-size: 42px; font-weight: bold; margin: 4px 0; display: block; width: 100%; line-height: 1.1;" onclick="sumarAlBalance(event)" title="Toca para sumar al balance del día">$0</div>
+    
+    <div id="saldo-gran-total" style="font-size: 14px; opacity: 0.9; margin-top: 6px; font-weight: normal; display: block; width: 100%;">Acumulado Total: $0</div>
+    
+    <div style="margin-top: 16px; display: flex; justify-content: center; width: 100%;">
+        <span style="cursor: pointer; display: inline-flex; align-items: center; gap: 5px; font-size: 13px; opacity: 0.95; padding: 6px 16px; background: rgba(255, 255, 255, 0.2); border-radius: 20px; font-weight: 500; transition: background 0.2s;" onclick="event.stopPropagation(); cerrarCaja();">
+            <span class="material-icons" style="font-size: 16px;">autorenew</span> Cerrar Caja
+        </span>
+    </div>
+
+</div>         
             <div class="card">
                 <h2><span class="material-icons">shopping_basket</span> Registrar Venta</h2>
                 
