@@ -414,6 +414,23 @@
         </div>
     </div>
 
+    <!-- ==================== MODAL DETALLE DE UN DÍA ==================== -->
+    <div id="modal-detalle-dia" class="modal-overlay" data-testid="modal-detalle-dia">
+        <div class="modal-sheet">
+            <div class="modal-grabber"></div>
+            <h3 class="modal-title">
+                <span class="material-icons-round">receipt_long</span> Ventas del día
+            </h3>
+            <p class="detalle-dia-fecha"><span class="material-icons-round">calendar_today</span> <span id="detalle-dia-titulo"></span></p>
+
+            <div id="detalle-dia-lista" class="detalle-dia-lista" data-testid="detalle-dia-lista"></div>
+
+            <div id="detalle-dia-total" class="detalle-dia-total"></div>
+
+            <button onclick="cerrarDetalleDia()" class="btn-ghost" data-testid="btn-cerrar-detalle-dia">Cerrar</button>
+        </div>
+    </div>
+
     <!-- ==================== MODAL PIN ADMIN (Teclado Numérico iOS) ==================== -->
     <div id="modal-pin" class="modal-overlay" data-testid="modal-pin">
         <div class="modal-sheet pin-sheet">
