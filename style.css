@@ -1305,6 +1305,81 @@ body:has(.modal-overlay[style*="display:flex"]) .dock-inferior {
     color: var(--primary-dark);
     font-variant-numeric: tabular-nums;
 }
+.cierre-row .cierre-right {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.cierre-row .cierre-chevron {
+    font-size: 18px;
+    color: var(--text-muted);
+}
+.cierre-row-click {
+    cursor: pointer;
+    transition: background 0.15s ease, transform 0.1s ease;
+}
+.cierre-row-click:active {
+    transform: scale(0.985);
+    background: var(--bg-card, var(--bg-input));
+}
+
+/* ---- Detalle de un día ---- */
+.detalle-dia-fecha {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin: 0 0 12px;
+}
+.detalle-dia-fecha .material-icons-round {
+    font-size: 16px;
+}
+.detalle-dia-lista {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 45vh;
+    overflow-y: auto;
+    margin-bottom: 14px;
+}
+.detalle-dia-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--bg-input);
+    padding: 12px 14px;
+    border-radius: var(--radius-md);
+    border-left: 3px solid var(--primary);
+    font-size: 14px;
+    color: var(--text-main);
+}
+.detalle-dia-nombre {
+    font-weight: 500;
+}
+.detalle-dia-cant {
+    font-weight: 700;
+    color: var(--primary-dark);
+    font-variant-numeric: tabular-nums;
+}
+.detalle-dia-cant small {
+    font-weight: 500;
+    color: var(--text-muted);
+}
+.detalle-dia-total {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 14px;
+    border-radius: var(--radius-md);
+    background: var(--primary);
+    color: #0A0A0B;
+    font-weight: 700;
+    font-size: 14px;
+    margin-bottom: 14px;
+    font-variant-numeric: tabular-nums;
+}
 
 /* ============ 17. TOASTS ============ */
 #toast-container {

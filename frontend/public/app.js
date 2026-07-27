@@ -634,17 +634,85 @@ function mostrarHistorialCierres() {
     if (historicoAcumulado.length === 0) {
         divLista.innerHTML = '<p style="text-align:center; color:var(--text-muted); font-size:13px; margin:20px 0;">No hay cierres registrados.</p>';
     } else {
-        historicoAcumulado.forEach((cierre) => {
+        historicoAcumulado.forEach((cierre, index) => {
             divLista.innerHTML += `
-                <div class="cierre-row">
+                <div class="cierre-row cierre-row-click" onclick="mostrarDetalleDia(${index})" data-testid="cierre-row-${index}">
                     <span class="cierre-fecha">
                         <span class="material-icons-round">calendar_today</span>${esc(cierre.fecha || "Ajuste")}
                     </span>
-                    <span class="cierre-monto">${fmtMoney(parseInt(cierre.balanceFinal || 0))}</span>
+                    <span class="cierre-right">
+                        <span class="cierre-monto">${fmtMoney(parseInt(cierre.balanceFinal || 0))}</span>
+                        <span class="material-icons-round cierre-chevron">chevron_right</span>
+                    </span>
                 </div>`;
         });
     }
     divModal.style.display = 'flex';
+}
+
+// ========================================================
+// 📋 DETALLE DE UN DÍA: UNIDADES VENDIDAS POR PRODUCTO
+// ========================================================
+function mostrarDetalleDia(index) {
+    const cierre = historicoAcumulado[index];
+    if (!cierre) return;
+
+    const divModal = document.getElementById('modal-detalle-dia');
+    const tituloEl = document.getElementById('detalle-dia-titulo');
+    const listaEl = document.getElementById('detalle-dia-lista');
+    const totalEl = document.getElementById('detalle-dia-total');
+    if (!divModal || !listaEl) return;
+
+    // Agrupar unidades vendidas por producto
+    const conteo = {};
+    const procesarDetalle = (detalle) => {
+        if (!detalle || typeof detalle !== 'string') return;
+        detalle.split(', ').forEach(item => {
+            const partes = item.trim().split(' ');
+            const cant = parseInt(partes[0]) || 1;
+            const nombre = partes.slice(1).join(' ');
+            if (nombre) conteo[nombre] = (conteo[nombre] || 0) + cant;
+        });
+    };
+
+    if (Array.isArray(cierre.ventasDetalle)) {
+        cierre.ventasDetalle.forEach(v => {
+            if (typeof v === 'string') procesarDetalle(v);
+            else if (v && typeof v === 'object' && v.detalle) procesarDetalle(v.detalle);
+        });
+    }
+
+    if (tituloEl) tituloEl.textContent = cierre.fecha || "Ajuste";
+
+    const productos = Object.entries(conteo).sort((a, b) => b[1] - a[1]);
+    const totalUnidades = productos.reduce((s, [, c]) => s + c, 0);
+
+    if (productos.length === 0) {
+        listaEl.innerHTML = `
+            <div class="empty-state" style="border:none; box-shadow:none; padding:22px 10px;">
+                <span class="material-icons-round">inventory_2</span>
+                No hay detalle de productos para este día.
+            </div>`;
+    } else {
+        listaEl.innerHTML = productos.map(([nombre, cant]) => `
+            <div class="detalle-dia-row">
+                <span class="detalle-dia-nombre">${esc(nombre)}</span>
+                <span class="detalle-dia-cant">${cant} <small>und.</small></span>
+            </div>`).join('');
+    }
+
+    if (totalEl) {
+        totalEl.innerHTML = `
+            <span>Total del día</span>
+            <span>${totalUnidades} und. · ${fmtMoney(parseInt(cierre.balanceFinal || 0))}</span>`;
+    }
+
+    divModal.style.display = 'flex';
+}
+
+function cerrarDetalleDia() {
+    const divModal = document.getElementById('modal-detalle-dia');
+    if (divModal) divModal.style.display = 'none';
 }
 
 // ========================================================
@@ -1588,7 +1656,7 @@ window.addEventListener('online', () => {
 
 window.addEventListener('offline', () => {
     actualizarEstadoRed();
-    mostrarToast("⚠️ Sin conexión. Las ventas se guardarán localmente.", "alerta", 4000);
+    mostrarToast("��️ Sin conexión. Las ventas se guardarán localmente.", "alerta", 4000);
 });
 
 document.addEventListener("DOMContentLoaded", actualizarEstadoRed);
