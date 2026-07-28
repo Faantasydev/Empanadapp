@@ -675,10 +675,18 @@ function mostrarDetalleDia(index) {
         });
     };
 
+    // Movimientos especiales que NO son unidades de producto (ej: deudas pagadas)
+    const movimientos = [];
+
     if (Array.isArray(cierre.ventasDetalle)) {
         cierre.ventasDetalle.forEach(v => {
-            if (typeof v === 'string') procesarDetalle(v);
-            else if (v && typeof v === 'object' && v.detalle) procesarDetalle(v.detalle);
+            if (v && typeof v === 'object' && v.tipo === 'deuda_pagada') {
+                movimientos.push({ texto: v.detalle || 'Deuda pagada', total: parseFloat(v.total) || 0 });
+            } else if (typeof v === 'string') {
+                procesarDetalle(v);
+            } else if (v && typeof v === 'object' && v.detalle) {
+                procesarDetalle(v.detalle);
+            }
         });
     }
 
@@ -687,19 +695,31 @@ function mostrarDetalleDia(index) {
     const productos = Object.entries(conteo).sort((a, b) => b[1] - a[1]);
     const totalUnidades = productos.reduce((s, [, c]) => s + c, 0);
 
-    if (productos.length === 0) {
-        listaEl.innerHTML = `
+    let html = '';
+
+    if (productos.length === 0 && movimientos.length === 0) {
+        html = `
             <div class="empty-state" style="border:none; box-shadow:none; padding:22px 10px;">
                 <span class="material-icons-round">inventory_2</span>
                 No hay detalle de productos para este día.
             </div>`;
     } else {
-        listaEl.innerHTML = productos.map(([nombre, cant]) => `
+        html += productos.map(([nombre, cant]) => `
             <div class="detalle-dia-row">
                 <span class="detalle-dia-nombre">${esc(nombre)}</span>
                 <span class="detalle-dia-cant">${cant} <small>und.</small></span>
             </div>`).join('');
+
+        html += movimientos.map(m => `
+            <div class="detalle-dia-row movimiento">
+                <span class="detalle-dia-nombre">
+                    <span class="material-icons-round">handshake</span> ${esc(m.texto)}
+                </span>
+                <span class="detalle-dia-cant">${fmtMoney(m.total)}</span>
+            </div>`).join('');
     }
+
+    listaEl.innerHTML = html;
 
     if (totalEl) {
         totalEl.innerHTML = `
@@ -1138,6 +1158,17 @@ function renderDeudores() {
         const fechaTxt = d.fechaCreacion || '—';
         const veces = (d.movimientos && d.movimientos.length) || 1;
         const esAdmin = (rolActual === 'admin');
+
+        // Qué fió (conceptos de los movimientos)
+        const conceptos = Array.isArray(d.movimientos)
+            ? d.movimientos.map(m => m.concepto).filter(Boolean)
+            : [];
+        const conceptoHtml = conceptos.length
+            ? `<div class="deudor-concepto" data-testid="deudor-concepto-${d.id}">
+                    <span class="material-icons-round">receipt_long</span>
+                    <span>${esc(conceptos.join(' · '))}</span>
+               </div>`
+            : '';
         const botonBorrar = esAdmin
             ? `<button class="icon-btn danger" onclick="borrarDeudorAdmin(${d.id})" title="Borrar (admin)" data-testid="btn-borrar-deudor-${d.id}">
                     <span class="material-icons-round">delete</span>
@@ -1152,6 +1183,7 @@ function renderDeudores() {
                         <span class="material-icons-round">event</span>
                         <span>Desde ${esc(fechaTxt)} · ${veces} ${veces === 1 ? 'movimiento' : 'movimientos'}</span>
                     </div>
+                    ${conceptoHtml}
                 </div>
                 <div style="display:flex; flex-direction:column; align-items:flex-end; gap:6px;">
                     <div class="deudor-monto-total" data-testid="deudor-monto-${d.id}">${fmtMoney(d.monto)}</div>
@@ -1170,66 +1202,220 @@ function renderDeudores() {
     }).join('');
 }
 
+// ---- Estado del flujo "¿Qué fiaste?" ----
+let carritoFiado = [];
+let fiadoContexto = { modo: 'nuevo', deudorId: null, nombre: '', tab: 'productos' };
+
+// Punto de entrada: valida el nombre y abre el menú de "¿Qué fiaste?"
 function agregarDeudor() {
     const nombreInp = document.getElementById('deudor-nombre');
-    const montoInp = document.getElementById('deudor-monto');
     const nombre = (nombreInp.value || '').trim();
-    const montoBase = parseFloat(montoInp.value);
-
-    if (!nombre || isNaN(montoBase) || montoBase <= 0) {
-        return alert("Ingresa nombre y monto válido mayor a 0.");
-    }
-
-    const montoConRecargo = Math.round(montoBase * (1 + RECARGO_DEUDA));
-    const fechaHoy = new Date().toLocaleDateString('es-CO');
-
-    deudores.push({
-        id: Date.now(),
-        nombre,
-        monto: montoConRecargo,
-        fechaCreacion: fechaHoy,
-        movimientos: [{
-            fecha: fechaHoy,
-            hora: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            base: montoBase,
-            recargo: montoConRecargo - montoBase,
-            total: montoConRecargo,
-            tipo: 'inicial'
-        }]
-    });
-
-    guardarEnMemoria();
-    actualizarPantalla();
-    nombreInp.value = ''; montoInp.value = '';
-    mostrarToast(`✔ Deuda de ${nombre}: ${fmtMoney(montoConRecargo)} (base ${fmtMoney(montoBase)} + 10%)`, 'éxito', 4000);
+    if (!nombre) return alert("Ingresa el nombre de la persona que fía.");
+    abrirModalFiado('nuevo', null, nombre);
 }
 
 function sumarDeudaAExistente(id) {
     const d = deudores.find(x => x.id === id);
     if (!d) return;
+    abrirModalFiado('existente', id, d.nombre);
+}
 
-    const nuevoStr = prompt(`Sumar deuda a "${d.nombre}"\n\nMonto adicional (se sumará +10% de recargo):`);
-    if (nuevoStr === null || nuevoStr.trim() === '') return;
+function abrirModalFiado(modo, deudorId, nombre) {
+    carritoFiado = [];
+    fiadoContexto = { modo, deudorId, nombre, tab: 'productos' };
 
-    const montoBase = parseFloat(nuevoStr.replace(/\D/g, ''));
-    if (isNaN(montoBase) || montoBase <= 0) return alert("Monto inválido.");
+    const nombreEl = document.getElementById('fiaste-cliente-nombre');
+    if (nombreEl) nombreEl.textContent = nombre + (modo === 'existente' ? ' · sumar deuda' : '');
 
-    const montoConRecargo = Math.round(montoBase * (1 + RECARGO_DEUDA));
-    d.monto = (parseFloat(d.monto) || 0) + montoConRecargo;
+    const montoInp = document.getElementById('fiado-dinero-monto');
+    if (montoInp) montoInp.value = '';
 
-    if (!Array.isArray(d.movimientos)) d.movimientos = [];
-    d.movimientos.push({
-        fecha: new Date().toLocaleDateString('es-CO'),
-        hora: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        base: montoBase,
-        recargo: montoConRecargo - montoBase,
+    cambiarTabFiado('productos');
+    renderFiadoProductos();
+    actualizarResumenFiado();
+
+    const modal = document.getElementById('modal-que-fiaste');
+    if (modal) modal.style.display = 'flex';
+}
+
+function cerrarModalFiado() {
+    const modal = document.getElementById('modal-que-fiaste');
+    if (modal) modal.style.display = 'none';
+    carritoFiado = [];
+}
+
+function cambiarTabFiado(tab) {
+    fiadoContexto.tab = tab;
+    const tabProd = document.getElementById('tab-fiado-productos');
+    const tabDin = document.getElementById('tab-fiado-dinero');
+    const panelProd = document.getElementById('panel-fiado-productos');
+    const panelDin = document.getElementById('panel-fiado-dinero');
+    const esProd = tab === 'productos';
+
+    if (tabProd) tabProd.classList.toggle('active', esProd);
+    if (tabDin) tabDin.classList.toggle('active', !esProd);
+    if (panelProd) panelProd.style.display = esProd ? 'block' : 'none';
+    if (panelDin) panelDin.style.display = esProd ? 'none' : 'block';
+    actualizarResumenFiado();
+}
+
+function renderFiadoProductos() {
+    const listaEl = document.getElementById('fiado-lista-productos');
+    if (!listaEl) return;
+
+    if (inventario.length === 0) {
+        listaEl.innerHTML = `
+            <div class="empty-state" style="border:none; box-shadow:none; padding:22px 10px;">
+                <span class="material-icons-round">shopping_basket</span>
+                No hay productos en inventario.
+            </div>`;
+        return;
+    }
+
+    listaEl.innerHTML = inventario.map(prod => {
+        const qty = carritoFiado.filter(p => p.id === prod.id).length;
+        const stockActual = prod.stock;
+        const badgeClass = stockActual === 0 ? 'agotado' : (stockActual <= 5 ? 'bajo' : '');
+        const stockText = stockActual === 0 ? 'Agotado' : `${stockActual} disp.`;
+
+        const control = qty > 0
+            ? `<div class="stepper" data-testid="fiado-stepper-${prod.id}">
+                   <button onclick="quitarFiado(${prod.id})" data-testid="fiado-menos-${prod.id}">−</button>
+                   <span class="qty" data-testid="fiado-qty-${prod.id}">${qty}</span>
+                   <button onclick="agregarFiado(${prod.id})" data-testid="fiado-mas-${prod.id}" ${qty >= stockActual ? 'disabled style="opacity:.35;pointer-events:none;"' : ''}>+</button>
+               </div>`
+            : `<button class="btn-add ${stockActual === 0 ? 'disabled' : ''}" onclick="agregarFiado(${prod.id})" data-testid="fiado-agregar-${prod.id}" ${stockActual === 0 ? 'disabled' : ''}>
+                   <span class="material-icons-round" style="font-size:15px;">add</span> Fiar
+               </button>`;
+
+        return `
+        <div class="fiado-prod-row" data-testid="fiado-prod-${prod.id}">
+            <div class="product-info">
+                <span class="product-name">${esc(prod.nombre)}</span>
+                <span class="product-price">${fmtMoney(prod.precio)}</span>
+                <div class="product-meta-row">
+                    <span class="badge-stock ${badgeClass}">
+                        <span class="material-icons-round">inventory_2</span> ${stockText}
+                    </span>
+                </div>
+            </div>
+            <div class="product-actions">${control}</div>
+        </div>`;
+    }).join('');
+}
+
+function agregarFiado(id) {
+    vibrar(20);
+    const producto = inventario.find(p => p.id === id);
+    if (!producto) return;
+    const enCarrito = carritoFiado.filter(p => p.id === id).length;
+    if (enCarrito >= producto.stock) return alert("¡No hay más stock disponible!");
+    carritoFiado.push({ ...producto });
+    renderFiadoProductos();
+    actualizarResumenFiado();
+}
+
+function quitarFiado(id) {
+    vibrar(15);
+    const idx = carritoFiado.findIndex(p => p.id === id);
+    if (idx !== -1) carritoFiado.splice(idx, 1);
+    renderFiadoProductos();
+    actualizarResumenFiado();
+}
+
+function actualizarResumenFiado() {
+    const el = document.getElementById('fiado-resumen');
+    if (!el) return;
+
+    let base = 0;
+    if (fiadoContexto.tab === 'productos') {
+        base = carritoFiado.reduce((s, p) => s + (parseFloat(p.precio) || 0), 0);
+    } else {
+        const inp = document.getElementById('fiado-dinero-monto');
+        base = parseFloat(inp && inp.value) || 0;
+    }
+
+    if (base <= 0) {
+        el.innerHTML = `<span class="fiado-resumen-empty">Selecciona qué fiaste para ver el total</span>`;
+        return;
+    }
+
+    const total = Math.round(base * (1 + RECARGO_DEUDA));
+    el.innerHTML = `
+        <div class="fiado-resumen-row"><span>Base</span><span>${fmtMoney(base)}</span></div>
+        <div class="fiado-resumen-row"><span>Recargo (10%)</span><span>${fmtMoney(total - base)}</span></div>
+        <div class="fiado-resumen-row total"><span>Total deuda</span><span>${fmtMoney(total)}</span></div>`;
+}
+
+function confirmarFiado() {
+    const ctx = fiadoContexto;
+    let base = 0;
+    let concepto = '';
+    let categoria = ctx.tab;
+    let aplicarCambios = null;
+
+    if (ctx.tab === 'productos') {
+        if (carritoFiado.length === 0) return alert("Selecciona al menos un producto para fiar.");
+        base = carritoFiado.reduce((s, p) => s + (parseFloat(p.precio) || 0), 0);
+        concepto = obtenerResumenCarrito(carritoFiado);
+        const copia = [...carritoFiado];
+        aplicarCambios = () => {
+            copia.forEach(item => {
+                const prod = inventario.find(p => p.id === item.id);
+                if (prod) prod.stock -= 1;
+            });
+        };
+    } else {
+        const inp = document.getElementById('fiado-dinero-monto');
+        base = parseFloat(inp && inp.value);
+        if (isNaN(base) || base <= 0) return alert("Ingresa un monto de dinero válido.");
+        concepto = 'Dinero del negocio';
+        aplicarCambios = () => {
+            balance -= base;
+            if (balance < 0) balance = 0;
+        };
+    }
+
+    const montoConRecargo = Math.round(base * (1 + RECARGO_DEUDA));
+    const fechaHoy = new Date().toLocaleDateString('es-CO');
+    const hora = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    aplicarCambios();
+
+    const movimiento = {
+        fecha: fechaHoy,
+        hora,
+        base,
+        recargo: montoConRecargo - base,
         total: montoConRecargo,
-        tipo: 'suma'
-    });
+        tipo: ctx.modo === 'nuevo' ? 'inicial' : 'suma',
+        concepto,
+        categoria
+    };
+
+    if (ctx.modo === 'nuevo') {
+        deudores.push({
+            id: Date.now(),
+            nombre: ctx.nombre,
+            monto: montoConRecargo,
+            fechaCreacion: fechaHoy,
+            movimientos: [movimiento]
+        });
+    } else {
+        const d = deudores.find(x => x.id === ctx.deudorId);
+        if (!d) return;
+        d.monto = (parseFloat(d.monto) || 0) + montoConRecargo;
+        if (!Array.isArray(d.movimientos)) d.movimientos = [];
+        d.movimientos.push(movimiento);
+    }
+
+    const nombreInp = document.getElementById('deudor-nombre');
+    if (ctx.modo === 'nuevo' && nombreInp) nombreInp.value = '';
 
     guardarEnMemoria();
     actualizarPantalla();
-    mostrarToast(`✔ +${fmtMoney(montoConRecargo)} a ${d.nombre}. Total: ${fmtMoney(d.monto)}`, 'éxito', 4000);
+    cerrarModalFiado();
+    mostrarToast(`✔ ${ctx.nombre} fió ${concepto} · ${fmtMoney(montoConRecargo)}`, 'éxito', 4000);
 }
 
 function pagarDeuda(id) {
@@ -1238,10 +1424,24 @@ function pagarDeuda(id) {
 
     if (!confirm(`¿"${d.nombre}" pagó COMPLETAMENTE la deuda de ${fmtMoney(d.monto)}?\n\nEsta es la única forma de eliminar la deuda.`)) return;
 
+    const montoPagado = parseFloat(d.monto) || 0;
+
+    // El pago entra al balance del día (se suma, no descuenta lo ya existente)
+    balance += montoPagado;
+
+    // Queda registrado como movimiento dentro del historial/corte del día
+    historial.unshift({
+        productoId: 'deuda_pagada',
+        tipo: 'deuda_pagada',
+        detalle: `Deuda pagada · ${d.nombre}`,
+        total: montoPagado,
+        hora: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    });
+
     deudores = deudores.filter(x => x.id !== id);
     guardarEnMemoria();
     actualizarPantalla();
-    mostrarToast(`✅ ${d.nombre} pagó ${fmtMoney(d.monto)}. Deuda liquidada.`, 'éxito', 4000);
+    mostrarToast(`✅ ${d.nombre} pagó ${fmtMoney(montoPagado)}. Sumado al balance del día.`, 'éxito', 4000);
 }
 
 function borrarDeudorAdmin(id) {
