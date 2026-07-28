@@ -1806,6 +1806,55 @@ button, .btn-primary, .dock-item, .product-card {
     border-radius: var(--radius-sm);
 }
 
+/* ---- Tarjeta desplegable (Agregar deudor) ---- */
+.card.collapsible {
+    padding: 0;
+    overflow: hidden;
+}
+.collapsible-header {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 16px 18px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    -webkit-tap-highlight-color: transparent;
+    transition: background 0.2s var(--ease-std);
+}
+.collapsible-header:active { background: var(--bg-elev-2); }
+.collapsible-header .card-inline-title {
+    margin-bottom: 0;
+}
+.collapsible-chevron {
+    color: var(--text-secondary);
+    font-size: 24px;
+    flex-shrink: 0;
+    transition: transform 0.35s var(--ease-std), color 0.2s ease;
+}
+.card.collapsible.open .collapsible-chevron {
+    transform: rotate(180deg);
+    color: var(--primary);
+}
+.collapsible-body {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s var(--ease-std);
+}
+.collapsible-inner {
+    padding: 0 18px 18px;
+    opacity: 0;
+    transform: translateY(-8px);
+    transition: opacity 0.3s var(--ease-std) 0.05s, transform 0.35s var(--ease-std) 0.05s;
+}
+.card.collapsible.open .collapsible-inner {
+    opacity: 1;
+    transform: translateY(0);
+}
+
 .deuda-hint {
     display: flex;
     align-items: center;
