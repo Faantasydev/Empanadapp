@@ -272,20 +272,23 @@
                 </div>
             </div>
 
-            <!-- Form nuevo deudor -->
-            <div class="card">
-                <h3 class="card-inline-title"><span class="material-icons-round">person_add</span> Agregar deudor</h3>
-                <div class="formulario">
-                    <div class="grupo-input">
-                        <input type="text" id="deudor-nombre" placeholder="Nombre completo" data-testid="input-deudor-nombre">
+            <!-- Form nuevo deudor (desplegable) -->
+            <div class="card collapsible" id="card-agregar-deudor">
+                <button type="button" class="collapsible-header" onclick="toggleAgregarDeudor()" aria-expanded="false" aria-controls="collapsible-agregar-deudor" data-testid="toggle-agregar-deudor">
+                    <span class="card-inline-title"><span class="material-icons-round">person_add</span> Agregar deudor</span>
+                    <span class="material-icons-round collapsible-chevron">expand_more</span>
+                </button>
+                <div class="collapsible-body" id="collapsible-agregar-deudor">
+                    <div class="collapsible-inner">
+                        <div class="formulario">
+                            <div class="grupo-input">
+                                <input type="text" id="deudor-nombre" placeholder="Nombre completo" data-testid="input-deudor-nombre">
+                            </div>
+                            <button class="btn-primary" onclick="agregarDeudor()" data-testid="btn-guardar-deudor">
+                                <span class="material-icons-round">add</span> Registrar Deuda
+                            </button>
+                        </div>
                     </div>
-                    <div class="deuda-hint">
-                        <span class="material-icons-round">info</span>
-                        Elige <strong>qué fiaste</strong> (productos o dinero). Se suma <strong>10% de recargo</strong> automáticamente.
-                    </div>
-                    <button class="btn-primary" onclick="agregarDeudor()" data-testid="btn-guardar-deudor">
-                        <span class="material-icons-round">add</span> Registrar Deuda
-                    </button>
                 </div>
             </div>
 

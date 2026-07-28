@@ -1206,6 +1206,26 @@ function renderDeudores() {
 let carritoFiado = [];
 let fiadoContexto = { modo: 'nuevo', deudorId: null, nombre: '', tab: 'productos' };
 
+// Desplegar/colapsar la tarjeta "Agregar deudor" con animación de altura
+function toggleAgregarDeudor() {
+    const card = document.getElementById('card-agregar-deudor');
+    const body = document.getElementById('collapsible-agregar-deudor');
+    const header = card ? card.querySelector('.collapsible-header') : null;
+    if (!card || !body) return;
+
+    vibrar(15);
+    const abierto = card.classList.toggle('open');
+    if (header) header.setAttribute('aria-expanded', abierto ? 'true' : 'false');
+
+    if (abierto) {
+        body.style.maxHeight = body.scrollHeight + 'px';
+        const inp = document.getElementById('deudor-nombre');
+        if (inp) setTimeout(() => inp.focus(), 320);
+    } else {
+        body.style.maxHeight = '0px';
+    }
+}
+
 // Punto de entrada: valida el nombre y abre el menú de "¿Qué fiaste?"
 function agregarDeudor() {
     const nombreInp = document.getElementById('deudor-nombre');
