@@ -1374,11 +1374,151 @@ body:has(.modal-overlay[style*="display:flex"]) .dock-inferior {
     padding: 12px 14px;
     border-radius: var(--radius-md);
     background: var(--primary);
-    color: #0A0A0B;
+    color: var(--on-primary);
     font-weight: 700;
     font-size: 14px;
     margin-bottom: 14px;
     font-variant-numeric: tabular-nums;
+}
+.detalle-dia-row.movimiento {
+    border-left-color: var(--success);
+    background: var(--bg-elev-2);
+}
+.detalle-dia-row.movimiento .detalle-dia-nombre {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--success);
+    font-weight: 600;
+}
+.detalle-dia-row.movimiento .detalle-dia-nombre .material-icons-round {
+    font-size: 16px;
+}
+.detalle-dia-row.movimiento .detalle-dia-cant {
+    color: var(--success);
+}
+
+/* ---- Concepto en tarjeta de deudor ---- */
+.deudor-concepto {
+    display: flex;
+    align-items: flex-start;
+    gap: 5px;
+    margin-top: 5px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+.deudor-concepto .material-icons-round {
+    font-size: 14px;
+    color: var(--primary);
+    margin-top: 1px;
+}
+
+/* ---- Modal ¿Qué fiaste? ---- */
+.fiaste-cliente {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin: 0 0 14px;
+}
+.fiaste-cliente .material-icons-round {
+    font-size: 17px;
+    color: var(--primary);
+}
+.fiaste-tabs {
+    display: flex;
+    gap: 8px;
+    background: var(--bg-input);
+    padding: 4px;
+    border-radius: var(--radius-pill);
+    margin-bottom: 16px;
+}
+.fiaste-tab {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 8px;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: var(--radius-pill);
+    cursor: pointer;
+    transition: background 0.2s var(--ease-std), color 0.2s var(--ease-std);
+}
+.fiaste-tab .material-icons-round { font-size: 17px; }
+.fiaste-tab.active {
+    background: var(--bg-elev);
+    color: var(--primary-dark);
+    box-shadow: var(--elev-1);
+}
+.fiado-productos-lista {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 40vh;
+    overflow-y: auto;
+    margin-bottom: 4px;
+}
+.fiado-prod-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 14px;
+    background: var(--bg-input);
+    border-radius: var(--radius-md);
+}
+.fiado-prod-row .product-actions {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+.fiado-resumen {
+    margin: 14px 0;
+    padding: 12px 14px;
+    background: var(--bg-elev-2);
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+}
+.fiado-resumen-empty {
+    display: block;
+    text-align: center;
+    font-size: 13px;
+    color: var(--text-muted);
+}
+.fiado-resumen-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 3px 0;
+}
+.fiado-resumen-row.total {
+    margin-top: 6px;
+    padding-top: 8px;
+    border-top: 1px solid var(--separator);
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--text-main);
+}
+.modal-actions-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 4px;
+}
+.modal-actions-row .btn-ghost,
+.modal-actions-row .btn-primary {
+    flex: 1;
+    margin: 0;
 }
 
 /* ============ 17. TOASTS ============ */
