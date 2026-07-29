@@ -1185,7 +1185,7 @@ function renderDeudores() {
                     </div>
                     ${conceptoHtml}
                 </div>
-                <div style="display:flex; flex-direction:column; align-items:flex-end; gap:6px;">
+                <div style="display:flex; align-items:center; gap:8px;">
                     <div class="deudor-monto-total" data-testid="deudor-monto-${d.id}">${fmtMoney(d.monto)}</div>
                     ${botonBorrar}
                 </div>
