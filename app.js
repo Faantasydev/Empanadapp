@@ -52,6 +52,9 @@ let chartGastos = null;
 // Utilidad: formatea número a moneda COP corta ($1.234)
 function fmtMoney(n) {
     const v = Number(n || 0);
+    if (v < 0) {
+        return '-$' + Math.abs(v).toLocaleString('es-CO');
+    }
     return '$' + v.toLocaleString('es-CO');
 }
 
@@ -596,10 +599,26 @@ function cobrarVenta() {
 
 function deshacerVenta(index) {
     const venta = historial[index];
+    if (!venta) return;
+
+    if (venta.tipo === 'ajuste_acumulado') {
+        const diferencia = venta.total || 0;
+        historicoAcumulado.push({
+            id: Date.now(),
+            fecha: `Reversión Ajuste (${new Date().toLocaleDateString('es-CO')})`,
+            balanceFinal: -diferencia,
+            ventasDetalle: [`Reversión de ${venta.detalle}`]
+        });
+        historial.splice(index, 1);
+        guardarEnMemoria();
+        actualizarPantalla();
+        return;
+    }
+
     balance -= venta.total;
     if (balance < 0) balance = 0;
 
-    let items = venta.detalle.split(", ");
+    let items = (venta.detalle || "").split(", ");
     items.forEach(item => {
         let partes = item.trim().split(" ");
         let cantidad = parseInt(partes[0]) || 1;
@@ -847,22 +866,68 @@ function editarAcumuladoTotal(event) {
         event.preventDefault();
     }
 
+    if (!Array.isArray(historicoAcumulado)) historicoAcumulado = [];
+    if (!Array.isArray(historial)) historial = [];
+
     let dineroDiasAnteriores = historicoAcumulado.reduce((sum, dia) => sum + (parseFloat(dia.balanceFinal) || 0), 0);
     let saldoActualTotal = dineroDiasAnteriores + balance;
 
     const nuevoValorStr = prompt("Escribe el nuevo valor real para tu Acumulado Total:", saldoActualTotal);
-    if (nuevoValorStr !== null) {
-        const nuevoValor = parseFloat(nuevoValorStr);
-        if (!isNaN(nuevoValor) && nuevoValor >= 0) {
-            historicoAcumulado = [{
-                id: Date.now(),
-                fecha: "Ajuste Manual",
-                balanceFinal: nuevoValor - balance
-            }];
-            guardarEnMemoria();
-            actualizarPantalla();
-        }
+    if (nuevoValorStr === null) return;
+
+    const nuevoValor = parseFloat(nuevoValorStr);
+    if (isNaN(nuevoValor) || nuevoValor < 0) {
+        alert("Número inválido.");
+        return;
     }
+
+    if (nuevoValor === saldoActualTotal) return;
+
+    let motivo = "";
+    if (nuevoValor < saldoActualTotal) {
+        const respuestaMotivo = prompt("El nuevo saldo es menor al actual. ¿En qué se invirtió o en qué se gastó el dinero?");
+        if (respuestaMotivo === null) return; // Operación cancelada
+        motivo = respuestaMotivo.trim();
+        if (!motivo) {
+            motivo = "Ajuste de saldo (menor)";
+        }
+    } else {
+        motivo = "Ajuste de saldo (mayor)";
+    }
+
+    const diferencia = nuevoValor - saldoActualTotal;
+    const ahora = new Date();
+    const horaStr = ahora.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const fechaStr = ahora.toLocaleDateString('es-CO');
+
+    // Detalle registrado en el historial del día
+    const detalleTexto = `Ajuste Acumulado: ${motivo} (Saldo anterior: ${fmtMoney(saldoActualTotal)} → Nuevo: ${fmtMoney(nuevoValor)})`;
+
+    historial.unshift({
+        productoId: 'ajuste_acumulado',
+        tipo: 'ajuste_acumulado',
+        detalle: detalleTexto,
+        total: diferencia,
+        hora: horaStr,
+        saldoAnterior: saldoActualTotal,
+        nuevoSaldo: nuevoValor,
+        motivo: motivo,
+        fecha: fechaStr
+    });
+
+    // Detalle registrado en el histórico acumulado general
+    historicoAcumulado.push({
+        id: Date.now(),
+        fecha: `Ajuste (${fechaStr} ${horaStr})`,
+        balanceFinal: diferencia,
+        saldoAnterior: saldoActualTotal,
+        nuevoSaldo: nuevoValor,
+        motivo: motivo,
+        ventasDetalle: [detalleTexto]
+    });
+
+    guardarEnMemoria();
+    actualizarPantalla();
 }
 
 function cerrarCaja() {
