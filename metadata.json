@@ -1,0 +1,6 @@
+{
+  "name": "Zampa · POS e Inventario",
+  "description": "Punto de Venta e Inventario para Zampa",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,14 @@
+{
+  "name": "zampa-pos",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "node server.js",
+    "build": "echo 'Build completed'",
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}
