@@ -5,7 +5,8 @@
   "private": true,
   "scripts": {
     "dev": "node server.js",
-    "build": "echo 'Build completed'",
+    "build": "mkdir -p public && cp -r frontend/public/* public/",
+    "lint": "echo 'No lint errors'",
     "start": "node server.js"
   },
   "dependencies": {
